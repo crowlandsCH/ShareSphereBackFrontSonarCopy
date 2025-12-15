@@ -4,6 +4,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ShareSphere.Api. Models
 {
+    /// <summary>
+    /// Represents a trade transaction (buy or sell).
+    /// </summary>
     public class Trade
     {
         [Key]
@@ -19,31 +22,37 @@ namespace ShareSphere.Api. Models
         public int CompanyId { get; set; }
 
         [Required]
-        public DateTime Timestamp { get; set; }
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
-        [Required]
+        [Required(ErrorMessage = "Quantity is required.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1.")]
         public int Quantity { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Unit price is required.")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0.01, double. MaxValue, ErrorMessage = "Unit price must be greater than zero.")]
         public decimal UnitPrice { get; set; }
 
+        [Required]
+        public TradeType Type { get; set; }
+
+        // Navigation properties
         [ForeignKey(nameof(BrokerId))]
-        public Broker?  Broker { get; set; }
+        public Broker? Broker { get; set; }
 
         [ForeignKey(nameof(ShareholderId))]
-        public Shareholder?  Shareholder { get; set; }
+        public Shareholder? Shareholder { get; set; }
 
         [ForeignKey(nameof(CompanyId))]
         public Company? Company { get; set; }
-
-            [Required]
-    public TradeType Type { get; set; } 
     }
 
+    /// <summary>
+    /// Type of trade transaction.
+    /// </summary>
     public enum TradeType
-{
-    Buy,    // Kauf
-    Sell    // Verkauf
-}
+    {
+        Buy,    // Kauf
+        Sell    // Verkauf
+    }
 }
