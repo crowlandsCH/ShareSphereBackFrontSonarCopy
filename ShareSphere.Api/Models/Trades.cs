@@ -36,5 +36,14 @@ namespace ShareSphere.Api. Models
 
         [ForeignKey(nameof(CompanyId))]
         public Company? Company { get; set; }
+
+            [Required]
+    public TradeType Type { get; set; } 
     }
+
+    public enum TradeType
+{
+    Buy,    // Kauf
+    Sell    // Verkauf
+}
 }

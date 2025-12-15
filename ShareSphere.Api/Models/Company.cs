@@ -20,4 +20,6 @@ namespace ShareSphere.Api. Models
         [ForeignKey(nameof(ExchangeId))]
         public StockExchange?  StockExchange { get; set; }
     }
+
+    
 }

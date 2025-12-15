@@ -18,5 +18,8 @@ namespace ShareSphere.Api.Models
         [Required]
         [Column(TypeName = "decimal(18,2)")]
         public decimal PortfolioValue { get; set; }
+
+        ICollection<Portfolio>? Portfolios { get; set; }
     }
+
 }
