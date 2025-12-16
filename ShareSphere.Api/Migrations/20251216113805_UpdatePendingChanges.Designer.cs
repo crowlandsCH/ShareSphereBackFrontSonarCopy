@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShareSphere.Api.Data;
 
@@ -11,9 +12,11 @@ using ShareSphere.Api.Data;
 namespace ShareSphere.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251216113805_UpdatePendingChanges")]
+    partial class UpdatePendingChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -238,211 +241,6 @@ namespace ShareSphere.Api.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("ShareSphere.Api.Models.Broker", b =>
-                {
-                    b.Property<int>("BrokerId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BrokerId"));
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("LicenseNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("BrokerId");
-
-                    b.ToTable("Brokers");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Company", b =>
-                {
-                    b.Property<int>("CompanyId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CompanyId"));
-
-                    b.Property<int>("ExchangeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("TickerSymbol")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.HasKey("CompanyId");
-
-                    b.HasIndex("ExchangeId");
-
-                    b.ToTable("Companies");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Portfolio", b =>
-                {
-                    b.Property<int>("PortfolioId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PortfolioId"));
-
-                    b.Property<int?>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ShareId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ShareholderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("amount")
-                        .HasColumnType("int");
-
-                    b.HasKey("PortfolioId");
-
-                    b.HasIndex("CompanyId");
-
-                    b.HasIndex("ShareId");
-
-                    b.HasIndex("ShareholderId");
-
-                    b.ToTable("Portfolios");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Share", b =>
-                {
-                    b.Property<int>("ShareId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ShareId"));
-
-                    b.Property<int>("AvailableQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("ShareId");
-
-                    b.HasIndex("CompanyId");
-
-                    b.ToTable("Shares");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Shareholder", b =>
-                {
-                    b.Property<int>("ShareholderId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ShareholderId"));
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<decimal>("PortfolioValue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("ShareholderId");
-
-                    b.ToTable("Shareholders");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.StockExchange", b =>
-                {
-                    b.Property<int>("ExchangeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ExchangeId"));
-
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("ExchangeId");
-
-                    b.ToTable("StockExchanges");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Trade", b =>
-                {
-                    b.Property<int>("TradeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TradeId"));
-
-                    b.Property<int>("BrokerId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ShareholderId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("TradeId");
-
-                    b.HasIndex("BrokerId");
-
-                    b.HasIndex("CompanyId");
-
-                    b.HasIndex("ShareholderId");
-
-                    b.ToTable("Trades");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -492,104 +290,6 @@ namespace ShareSphere.Api.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Company", b =>
-                {
-                    b.HasOne("ShareSphere.Api.Models.StockExchange", "StockExchange")
-                        .WithMany("Companies")
-                        .HasForeignKey("ExchangeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StockExchange");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Portfolio", b =>
-                {
-                    b.HasOne("ShareSphere.Api.Models.Company", null)
-                        .WithMany("Portfolios")
-                        .HasForeignKey("CompanyId");
-
-                    b.HasOne("ShareSphere.Api.Models.Share", "Share")
-                        .WithMany()
-                        .HasForeignKey("ShareId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ShareSphere.Api.Models.Shareholder", "Shareholder")
-                        .WithMany("Portfolios")
-                        .HasForeignKey("ShareholderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Share");
-
-                    b.Navigation("Shareholder");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Share", b =>
-                {
-                    b.HasOne("ShareSphere.Api.Models.Company", "Company")
-                        .WithMany("Shares")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Company");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Trade", b =>
-                {
-                    b.HasOne("ShareSphere.Api.Models.Broker", "Broker")
-                        .WithMany("Trades")
-                        .HasForeignKey("BrokerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ShareSphere.Api.Models.Company", "Company")
-                        .WithMany("Trades")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ShareSphere.Api.Models.Shareholder", "Shareholder")
-                        .WithMany("Trades")
-                        .HasForeignKey("ShareholderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Broker");
-
-                    b.Navigation("Company");
-
-                    b.Navigation("Shareholder");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Broker", b =>
-                {
-                    b.Navigation("Trades");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Company", b =>
-                {
-                    b.Navigation("Portfolios");
-
-                    b.Navigation("Shares");
-
-                    b.Navigation("Trades");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.Shareholder", b =>
-                {
-                    b.Navigation("Portfolios");
-
-                    b.Navigation("Trades");
-                });
-
-            modelBuilder.Entity("ShareSphere.Api.Models.StockExchange", b =>
-                {
-                    b.Navigation("Companies");
                 });
 #pragma warning restore 612, 618
         }

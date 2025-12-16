@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ShareSphere.Api.Data;
 using ShareSphere.Api.Models;
+using ShareSphere.Api.Services;
 using System.Text;
 using Microsoft.AspNetCore.HttpOverrides;
 
@@ -111,10 +112,29 @@ builder.Services.AddCors(options =>
 
 // ---- 7) eigenen AuthService registrieren ----
 builder.Services.AddScoped<ShareSphere.Api.Services.IAuthService, ShareSphere.Api.Services.AuthService>();
-
+builder.Services.AddScoped<IStockExchangeService, StockExchangeService>();
 var app = builder.Build();
 
+Console.WriteLine($"API läuft auf: {string.Join(", ", app. Urls)}");
 // ---- 8) Rollen seeden ----
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services. GetRequiredService<RoleManager<IdentityRole>>();
+        
+        await DbInitializer.SeedAdminUser(userManager, roleManager);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
+
+
 async Task SeedRolesAsync(IServiceProvider sp)
 {
     var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
@@ -172,3 +192,4 @@ if (!app.Environment.IsDevelopment())
     app.MapFallbackToFile("index.html");
 }
 
+app.Run();
