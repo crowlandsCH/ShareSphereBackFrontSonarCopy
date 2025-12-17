@@ -62,7 +62,11 @@ builder.Services
 builder.Services.AddAuthorization();
 
 // ---- 4) Controllers ----
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler. IgnoreCycles;
+    });
 
 // ---- 5) Swagger mit JWT ----
 builder.Services.AddEndpointsApiExplorer();
@@ -115,6 +119,7 @@ builder.Services.AddCors(options =>
 // ---- 7) eigenen AuthService registrieren ----
 builder.Services.AddScoped<ShareSphere.Api.Services.IAuthService, ShareSphere.Api.Services.AuthService>();
 builder.Services.AddScoped<IStockExchangeService, StockExchangeService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
 var app = builder.Build();
 
 Console.WriteLine($"API läuft auf: {string.Join(", ", app.Urls)}");
