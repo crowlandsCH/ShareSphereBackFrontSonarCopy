@@ -116,10 +116,13 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ---- 7) eigenen AuthService registrieren ----
+// ---- 7) Service registrieren ----
 builder.Services.AddScoped<ShareSphere.Api.Services.IAuthService, ShareSphere.Api.Services.AuthService>();
 builder.Services.AddScoped<IStockExchangeService, StockExchangeService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IBrokerService, BrokerService>();
+builder.Services.AddScoped<IShareService, ShareService>();
+builder.Services.AddScoped<IShareholderService, ShareholderService>();
 var app = builder.Build();
 
 Console.WriteLine($"API läuft auf: {string.Join(", ", app.Urls)}");
