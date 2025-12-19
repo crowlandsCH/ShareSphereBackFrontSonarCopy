@@ -13,15 +13,19 @@ namespace ShareSphere.Api.Controllers
     {
         private readonly IShareholderService _shareholderService;
         private readonly ISharePurchaseService _purchaseService;
+        private readonly ITradeService _tradeService;
 
 // Constructor erweitern:
 public ShareholderController(
     IShareholderService shareholderService,
-    ISharePurchaseService purchaseService)
+    ISharePurchaseService purchaseService,
+    ITradeService tradeService)
 {
     _shareholderService = shareholderService;
     _purchaseService = purchaseService;
+    _tradeService = tradeService;
 }
+
 
         // DTO for creating/updating shareholders
         public record ShareholderRequest(
@@ -214,8 +218,51 @@ public async Task<IActionResult> PurchaseShares(
 
             return Ok(portfolio);
         }
+
+
+
+/// <summary>
+/// Gibt alle Trades für einen spezifischen Shareholder zurück
+/// Returns:  All trades involving this shareholder including:  
+/// - Trade type (Buy/Sell)
+/// - Quantity
+/// - Unit price
+/// - Timestamp
+/// - Company and Broker information
+/// </summary>
+[HttpGet("{id}/trades")]
+[ProducesResponseType(typeof(IEnumerable<TradeDto>), StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status404NotFound)]
+public async Task<IActionResult> GetTrades(int id)
+{
+    // Prüfe ob Shareholder existiert
+    var shareholder = await _shareholderService.GetByIdAsync(id);
+    if (shareholder == null)
+        return NotFound(new { message = $"Shareholder with ID {id} not found." });
+
+    var trades = await _tradeService. GetByShareholderIdAsync(id);
+    
+    // Mappe zu DTO um zirkuläre Referenzen zu vermeiden
+    var tradeDtos = trades.Select(t => new TradeDto
+    {
+        TradeId = t. TradeId,
+        ShareholderId = t.ShareholderId,
+        CompanyId = t.CompanyId,
+        CompanyName = t.Company?. Name ?? "Unknown",
+        BrokerId = t.BrokerId,
+        BrokerName = t.Broker?.Name ?? "Unknown",
+        Type = t. Type,
+        Quantity = t.Quantity,
+        UnitPrice = t.UnitPrice,
+        Timestamp = t. Timestamp
+    });
+
+    return Ok(tradeDtos);
+}
     
     }
+
+    
 
     
 }

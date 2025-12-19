@@ -11,5 +11,7 @@ namespace ShareSphere.Api.Services
         Task<Trade> CreateAsync(Trade trade);
         Task<Trade?> UpdateAsync(int tradeId, Trade trade);
         Task<bool> DeleteAsync(int tradeId);
+
+        Task<IEnumerable<Trade>> GetByShareholderIdAsync(int shareholderId);
     }
 }

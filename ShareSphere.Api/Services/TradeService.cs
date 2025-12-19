@@ -102,5 +102,16 @@ namespace ShareSphere.Api.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+public async Task<IEnumerable<Trade>> GetByShareholderIdAsync(int shareholderId)
+{
+    return await _context. Trades
+        .AsNoTracking() // Wichtig für Performance
+        .Where(t => t.ShareholderId == shareholderId)
+        .Include(t => t.Company)
+        .Include(t => t.Broker)
+        .OrderByDescending(t => t. Timestamp)
+        .ToListAsync();
+}
     }
 }
