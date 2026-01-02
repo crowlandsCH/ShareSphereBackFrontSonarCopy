@@ -42,6 +42,7 @@ export function ShareList({ shares, company }: ShareListProps) {
     // Navigate to trade form with pre-selected share
     navigate('/trade', { state: { share, company } });
   };
+  
 
   return (
     <div className="space-y-4">

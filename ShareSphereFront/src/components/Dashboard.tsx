@@ -44,6 +44,26 @@ useEffect(() => {
   fetchExchanges();
 }, []);
 
+useEffect(() => {
+  if (!selectedCompany) return;
+
+  const loadShares = async () => {
+    try {
+      const data = await apiFetch<any[]>(
+        `/api/shares/company/${selectedCompany.companyId}`
+      );
+      setShares(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  loadShares();
+  const interval = setInterval(loadShares, 3000);
+
+  return () => clearInterval(interval);
+}, [selectedCompany]);
+
   // Simulated API call: GET /api/exchanges/{exchangeId}/companies
 const handleExchangeSelect = async (exchange: any) => {
   try {
@@ -66,14 +86,13 @@ const handleExchangeSelect = async (exchange: any) => {
   }
 };
 
-  // Simulated API call: GET /api/companies/{companyId}/shares
 const handleCompanySelect = async (company: any) => {
   try {
     setSelectedCompany(company);
     setShares([]);
     setLoadingShares(true);
 
-    const shares = await apiFetch<any>(
+    const shares = await apiFetch<any[]>(
       `/api/shares/company/${company.companyId}`
     );
 
