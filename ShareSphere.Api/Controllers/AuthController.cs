@@ -20,7 +20,8 @@ namespace ShareSphere.Api.Controllers
         public record RegisterRequest(
             [Required, MinLength(3)] string UserName,
             [Required, MinLength(3), MaxLength(64)] string DisplayName,
-            [Required, MinLength(6)] string Password
+            [Required, MinLength(6)] string Password,
+            [Required, EmailAddress] string Email
         );
 
         public record LoginRequest(
@@ -37,12 +38,14 @@ namespace ShareSphere.Api.Controllers
         {
             // Falls keine Rollen übergeben wurden, Standard-Rolle "user" setzen
 
-            var result = await _auth.RegisterAsync(req.UserName, req.DisplayName, req.Password, new[] {"user"});
+            var result = await _auth.RegisterAsync(req.UserName, req.DisplayName, req.Password, req.Email, new[] {"user"});
             if (!result.Succeeded)
             {
                 // Einheitliches Fehlerformat (Identity-Fehler, doppelte Usernames, falsche Rollen)
                 return BadRequest(new { errors = result.Errors });
             }
+
+
 
             return Ok(new { token = result.Token });
         }

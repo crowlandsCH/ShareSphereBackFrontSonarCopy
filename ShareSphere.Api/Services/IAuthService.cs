@@ -11,7 +11,7 @@ namespace ShareSphere.Api.Services
 
     public interface IAuthService
     {
-        Task<RegisterResult> RegisterAsync(string userName, string displayName, string password, string[] roles);
+        Task<RegisterResult> RegisterAsync(string userName, string displayName, string password, string email, string[] roles);
         Task<string?> LoginAsync(string userName, string password);
     }
 }

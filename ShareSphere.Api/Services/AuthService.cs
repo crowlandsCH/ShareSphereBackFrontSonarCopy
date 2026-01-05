@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using ShareSphere.Api.Models;
+using ShareSphere.Api.Data; 
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -16,16 +17,22 @@ namespace ShareSphere.Api.Services
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _config;
 
-        public AuthService(UserManager<ApplicationUser> userManager,
-                           RoleManager<IdentityRole> roleManager,
-                           IConfiguration config)
-        {
-            _userManager = userManager;
-            _roleManager = roleManager;
-            _config = config;
-        }
+        private readonly AppDbContext _context;
 
-        public async Task<RegisterResult> RegisterAsync(string userName, string displayName, string password, string[] roles)
+
+    public AuthService(
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager,
+        IConfiguration config,
+        AppDbContext context)  // ← ADD THIS
+    {
+        _userManager = userManager;
+        _roleManager = roleManager;
+        _config = config;
+        _context = context;    // ← ADD THIS
+    }
+
+        public async Task<RegisterResult> RegisterAsync(string userName, string displayName, string password, string email, string[] roles)
         {
             // 1) Existiert der Benutzer schon?
             var existing = await _userManager.FindByNameAsync(userName);
@@ -38,7 +45,8 @@ namespace ShareSphere.Api.Services
             var user = new ApplicationUser
             {
                 UserName = userName,
-                DisplayName = displayName
+                DisplayName = displayName,
+                Email = email
             };
 
             var create = await _userManager.CreateAsync(user, password);
@@ -81,7 +89,26 @@ namespace ShareSphere.Api.Services
                 };
             }
 
-            // 4) JWT erstellen
+    // ⭐ 4) Shareholder NUR für "user" Rolle erstellen
+    if (normalizedRoles.Contains("user"))
+    {
+        var shareholder = new Shareholder
+        {
+            Name = displayName,
+            Email = email,
+            PortfolioValue = 0
+        };
+
+        _context.Shareholders.Add(shareholder);
+        await _context.SaveChangesAsync();
+
+        // Verknüpfung speichern
+        user.ShareholderId = shareholder.ShareholderId;
+        await _userManager.UpdateAsync(user);
+    }
+    // Admin bekommt KEIN Shareholder-Profil (ShareholderId bleibt null)
+
+            // 5) JWT erstellen
             var token = await CreateTokenAsync(user);
             return new RegisterResult { Succeeded = true, Token = token };
         }
@@ -107,6 +134,12 @@ namespace ShareSphere.Api.Services
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName), // Username
                 new Claim("displayName", user.DisplayName)                     // eigener Claim
             };
+
+                        // ⭐ ShareholderId nur hinzufügen, wenn vorhanden (User-Rolle)
+            if (user.ShareholderId.HasValue)
+            {
+                claims. Add(new Claim("shareholderId", user.ShareholderId.Value.ToString()));
+            }
 
             foreach (var r in roles)
                 claims.Add(new Claim("role", r)); // wichtig für [Authorize(Roles="…")]

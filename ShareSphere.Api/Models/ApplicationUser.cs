@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ShareSphere.Api.Models
 {
@@ -29,5 +30,11 @@ namespace ShareSphere.Api.Models
         /// Indicates if the user account is active.
         /// </summary>
         public bool IsActive { get; set; } = true;
-    }
+
+            // ⭐ NEU: Verknüpfung mit Shareholder
+             public int?  ShareholderId { get; set; }
+    
+            [ForeignKey(nameof(ShareholderId))]
+            public Shareholder?  Shareholder { get; set; }
+            }
 }

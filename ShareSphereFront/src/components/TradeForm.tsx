@@ -55,7 +55,7 @@ export function TradeForm() {
       if (preselectedData?.share) {
         setFormData(prev => ({
           ...prev,
-          shareId: preselectedData.share.id.toString(),
+          shareId: preselectedData.share.ShareId.toString(),
         }));
       }
       

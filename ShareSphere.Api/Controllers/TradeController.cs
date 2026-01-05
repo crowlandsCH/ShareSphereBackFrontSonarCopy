@@ -77,8 +77,18 @@ namespace ShareSphere.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] TradeRequest request)
         {
+
+                // ⭐ ShareholderId aus JWT-Claims holen
+    var shareholderIdClaim = User.FindFirst("shareholderId")?.Value;
+    
+    if (string.IsNullOrEmpty(shareholderIdClaim) || !int.TryParse(shareholderIdClaim, out var shareholderId))
+    {
+        return BadRequest(new { message = "You must be a registered shareholder to create trades." });
+    }
+
             var trade = new Trade
             {
+                ShareholderId = shareholderId,  // ⭐ Automatisch aus Token!
                 CompanyId = request.CompanyId,
                 BrokerId = request.BrokerId,
                 Quantity = request.Quantity,
@@ -113,6 +123,22 @@ namespace ShareSphere.Api.Controllers
                 return NotFound(new { message = $"Trade with ID {id} not found." });
 
             return Ok(updated);
+        }
+
+        // ⭐ Neuer Endpoint:  User kann seine eigenen Trades abrufen
+        [Authorize(Roles = "user")]
+        [HttpGet("my-trades")]
+        public async Task<IActionResult> GetMyTrades()
+        {
+            var shareholderIdClaim = User.FindFirst("shareholderId")?.Value;
+            
+            if (string.IsNullOrEmpty(shareholderIdClaim) || !int.TryParse(shareholderIdClaim, out var shareholderId))
+            {
+                return BadRequest(new { message = "Shareholder information not found." });
+            }
+
+            var trades = await _tradeService.GetByShareholderIdAsync(shareholderId);
+            return Ok(trades);
         }
 
         /// <summary>
