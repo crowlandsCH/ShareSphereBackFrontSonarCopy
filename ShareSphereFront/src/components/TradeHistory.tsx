@@ -1,21 +1,28 @@
+// File: TradeHistory.tsx
 import React, { useState } from 'react';
-import { Calendar, Filter, ChevronLeft, ChevronRight, ArrowUpDown, ArrowDownUp } from 'lucide-react';
+import { Calendar, Filter, ChevronLeft, ChevronRight, ArrowDownUp, ArrowUpDown } from 'lucide-react';
 import { EmptyState } from './EmptyState';
 
+enum TradeType {
+  Buy = 0,
+  Sell = 1
+}
+
+interface Trade {
+  tradeId: number;
+  shareholderId: number;
+  companyId: number;
+  companyName: string;
+  brokerId: number;
+  brokerName: string;
+  type: TradeType;
+  quantity: number;
+  unitPrice: number;
+  timestamp: string;
+}
+
 interface TradeHistoryProps {
-  trades: Array<{
-    id: number;
-    tradeType: 'Buy' | 'Sell';
-    companyName: string;
-    ticker: string;
-    shareType: string;
-    quantity: number;
-    pricePerShare: number;
-    totalAmount: number;
-    brokerName: string;
-    tradeDate: string;
-    status: string;
-  }>;
+  trades: Trade[];
 }
 
 export function TradeHistory({ trades }: TradeHistoryProps) {
@@ -38,14 +45,18 @@ export function TradeHistory({ trades }: TradeHistoryProps) {
       day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
+      minute:  '2-digit',
     }).format(date);
   };
 
-  const filterByDateRange = (trade: any) => {
+  const getTradeTypeLabel = (type: TradeType): 'Buy' | 'Sell' => {
+    return type === TradeType.Buy ?  'Buy' : 'Sell';
+  };
+
+  const filterByDateRange = (trade:  Trade) => {
     if (dateRange === 'All') return true;
     
-    const tradeDate = new Date(trade.tradeDate);
+    const tradeDate = new Date(trade.timestamp);  // ⭐ timestamp statt tradeDate
     const now = new Date();
     
     if (dateRange === 'Today') {
@@ -62,7 +73,11 @@ export function TradeHistory({ trades }: TradeHistoryProps) {
   };
 
   const filteredTrades = trades
-    .filter(trade => filterType === 'All' || trade.tradeType === filterType)
+    .filter(trade => {
+      if (filterType === 'All') return true;
+      const tradeTypeLabel = getTradeTypeLabel(trade.type);  // ⭐ type statt tradeType
+      return tradeTypeLabel === filterType;
+    })
     .filter(filterByDateRange);
 
   const totalPages = Math.ceil(filteredTrades.length / itemsPerPage);
@@ -121,7 +136,7 @@ export function TradeHistory({ trades }: TradeHistoryProps) {
             <select
               value={dateRange}
               onChange={(e) => {
-                setDateRange(e.target.value as any);
+                setDateRange(e. target.value as any);
                 setCurrentPage(1);
               }}
               className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -134,9 +149,9 @@ export function TradeHistory({ trades }: TradeHistoryProps) {
           </div>
         </div>
 
-        {filteredTrades.length > 0 && (
+        {filteredTrades. length > 0 && (
           <div className="mt-2 text-sm text-gray-600">
-            Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredTrades.length)} of {filteredTrades.length} trades
+            Showing {startIndex + 1}-{Math. min(startIndex + itemsPerPage, filteredTrades.length)} of {filteredTrades. length} trades
           </div>
         )}
       </div>
@@ -157,51 +172,71 @@ export function TradeHistory({ trades }: TradeHistoryProps) {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-gray-700">Type</th>
-                    <th className="px-6 py-3 text-left text-gray-700">Company</th>
-                    <th className="px-6 py-3 text-left text-gray-700">Share Type</th>
-                    <th className="px-6 py-3 text-left text-gray-700">Quantity</th>
-                    <th className="px-6 py-3 text-left text-gray-700">Price per Share</th>
-                    <th className="px-6 py-3 text-left text-gray-700">Total Amount</th>
-                    <th className="px-6 py-3 text-left text-gray-700">Broker</th>
-                    <th className="px-6 py-3 text-left text-gray-700">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price per Share</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Broker</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {paginatedTrades.map((trade) => (
-                    <tr key={trade.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {trade.tradeType === 'Buy' ? (
-                            <ArrowDownUp className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <ArrowUpDown className="w-4 h-4 text-red-600" />
-                          )}
-                          <span className={`px-2 py-1 rounded text-sm ${
-                            trade.tradeType === 'Buy'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-red-100 text-red-700'
-                          }`}>
-                            {trade.tradeType}
+                  {paginatedTrades.map((trade) => {
+                    const tradeTypeLabel = getTradeTypeLabel(trade.type);
+                    const totalAmount = trade.quantity * trade.unitPrice;  // ⭐ Berechnet aus quantity * unitPrice
+                    
+                    return (
+                      <tr key={trade.tradeId} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {trade.type === TradeType.Buy ? (
+                              <ArrowDownUp className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <ArrowUpDown className="w-4 h-4 text-red-600" />
+                            )}
+                            <span className={`px-2 py-1 rounded text-sm font-medium ${
+                              trade. type === TradeType.Buy
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {tradeTypeLabel}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {trade.companyName}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-sm text-gray-900 font-medium">
+                            {trade.quantity. toLocaleString()}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-gray-900">{trade.companyName}</div>
-                          <div className="text-sm text-gray-500">{trade.ticker}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">{trade.shareType}</td>
-                      <td className="px-6 py-4 text-gray-900">{trade.quantity.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-gray-900">{formatCurrency(trade.pricePerShare)}</td>
-                      <td className="px-6 py-4 text-gray-900">{formatCurrency(trade.totalAmount)}</td>
-                      <td className="px-6 py-4 text-gray-600">{trade.brokerName}</td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600">{formatDate(trade.tradeDate)}</div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-sm text-gray-900">
+                            {formatCurrency(trade.unitPrice)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {formatCurrency(totalAmount)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-gray-600">
+                            {trade.brokerName}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-600">
+                            {formatDate(trade.timestamp)}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -220,19 +255,32 @@ export function TradeHistory({ trades }: TradeHistoryProps) {
               </button>
 
               <div className="flex gap-2">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1 rounded-md transition-colors ${
-                      currentPage === page
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-1 rounded-md transition-colors ${
+                        currentPage === pageNum
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
               </div>
 
               <button
