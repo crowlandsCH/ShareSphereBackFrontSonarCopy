@@ -101,7 +101,7 @@ namespace ShareSphere.Api.Services
             if (shareholder == null)
                 return null;
 
-            // Erstelle Liste der besessenen Shares
+            // Create list of owned shares
             var ownedShares = shareholder. Portfolios
                 .Where(p => p.Share != null && p.Share.Company != null)
                 .Select(p => new OwnedShareDto
@@ -115,10 +115,10 @@ namespace ShareSphere.Api.Services
                     TotalValue = p.amount * p.Share.Price,
                     StockExchange = p.Share.Company.StockExchange?. Name ?? "Unknown"
                 })
-                .OrderByDescending(s => s.TotalValue) // Sortiert nach Wert (höchster zuerst)
+                .OrderByDescending(s => s.TotalValue) // Sorted by value (highest first)
                 .ToList();
 
-            // Berechne Gesamtwert basierend auf aktuellen Preisen
+            // Calculate total value based on current prices
             decimal totalPortfolioValue = ownedShares.Sum(s => s. TotalValue);
 
             // Gesamtanzahl aller Shares

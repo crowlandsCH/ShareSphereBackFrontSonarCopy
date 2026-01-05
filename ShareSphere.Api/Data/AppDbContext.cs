@@ -10,7 +10,7 @@ namespace ShareSphere.Api.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) {}
 
-        // DbSets für Ihre Modelle
+        // DbSets for your models
         public DbSet<StockExchange> StockExchanges { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Shareholder> Shareholders { get; set; }

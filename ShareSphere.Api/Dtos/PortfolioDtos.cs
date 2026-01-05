@@ -1,7 +1,7 @@
 namespace ShareSphere.Api.Models. Dtos
 {
     /// <summary>
-    /// Portfolio-Übersicht mit allen Shares
+    /// Portfolio overview with all shares
     /// </summary>
     public record ShareholderPortfolioDto
     {
@@ -14,7 +14,7 @@ namespace ShareSphere.Api.Models. Dtos
     }
 
     /// <summary>
-    /// Einzelner Share im Portfolio
+    /// Single share in portfolio
     /// </summary>
     public record OwnedShareDto
     {

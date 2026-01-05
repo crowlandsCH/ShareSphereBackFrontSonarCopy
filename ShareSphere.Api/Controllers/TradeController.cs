@@ -78,7 +78,7 @@ namespace ShareSphere.Api.Controllers
         public async Task<IActionResult> Create([FromBody] TradeRequest request)
         {
 
-                // ⭐ ShareholderId aus JWT-Claims holen
+                // ⭐ Get ShareholderId from JWT claims
     var shareholderIdClaim = User.FindFirst("shareholderId")?.Value;
     
     if (string.IsNullOrEmpty(shareholderIdClaim) || !int.TryParse(shareholderIdClaim, out var shareholderId))
@@ -88,7 +88,7 @@ namespace ShareSphere.Api.Controllers
 
             var trade = new Trade
             {
-                ShareholderId = shareholderId,  // ⭐ Automatisch aus Token!
+                ShareholderId = shareholderId,  // ⭐ Automatically from token!
                 CompanyId = request.CompanyId,
                 BrokerId = request.BrokerId,
                 Quantity = request.Quantity,

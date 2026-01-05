@@ -34,7 +34,7 @@ namespace ShareSphere.Api.Services
 
         public async Task<RegisterResult> RegisterAsync(string userName, string displayName, string password, string email, string[] roles)
         {
-            // 1) Existiert der Benutzer schon?
+            // 1) Does the user already exist?
             var existing = await _userManager.FindByNameAsync(userName);
             if (existing is not null)
             {
@@ -59,11 +59,11 @@ namespace ShareSphere.Api.Services
                 };
             }
 
-            // 3) Rollen normalisieren und prüfen
+            // 3) Normalize and check roles
             var normalizedRoles = (roles ?? Array.Empty<string>())
                                   .Select(r => r.Trim().ToLowerInvariant())
                                   .Where(r => !string.IsNullOrWhiteSpace(r))
-                                  .DefaultIfEmpty("user") // Defaultrolle, falls nichts übergeben
+                                  .DefaultIfEmpty("user") // Default role if nothing is passed
                                   .ToArray();
 
             System.Console.WriteLine(normalizedRoles);
@@ -72,9 +72,9 @@ namespace ShareSphere.Api.Services
             {
                 if (!await _roleManager.RoleExistsAsync(role))
                 {
-                    // Falls du fehlende Rollen automatisch erstellen willst, könntest du hier:
+                    // If you want to auto-create missing roles, you could do here:
                     // await _roleManager.CreateAsync(new IdentityRole(role));
-                    // Ich empfehle für klare Kontrolle: Fehler zurückgeben.
+                    // I recommend for clear control: return error.
                     return new RegisterResult { Succeeded = false, Errors = new[] { $"RoleNotFound:{role}" } };
                 }
             }
@@ -89,7 +89,7 @@ namespace ShareSphere.Api.Services
                 };
             }
 
-    // ⭐ 4) Shareholder NUR für "user" Rolle erstellen
+    // ⭐ 4) Create shareholder ONLY for "user" role
     if (normalizedRoles.Contains("user"))
     {
         var shareholder = new Shareholder
@@ -102,13 +102,13 @@ namespace ShareSphere.Api.Services
         _context.Shareholders.Add(shareholder);
         await _context.SaveChangesAsync();
 
-        // Verknüpfung speichern
+        // Save link
         user.ShareholderId = shareholder.ShareholderId;
         await _userManager.UpdateAsync(user);
     }
-    // Admin bekommt KEIN Shareholder-Profil (ShareholderId bleibt null)
+    // Admin gets NO shareholder profile (ShareholderId remains null)
 
-            // 5) JWT erstellen
+            // 5) Create JWT
             var token = await CreateTokenAsync(user);
             return new RegisterResult { Succeeded = true, Token = token };
         }
@@ -132,17 +132,17 @@ namespace ShareSphere.Api.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),               // User-ID
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName), // Username
-                new Claim("displayName", user.DisplayName)                     // eigener Claim
+                new Claim("displayName", user.DisplayName)                     // custom claim
             };
 
-                        // ⭐ ShareholderId nur hinzufügen, wenn vorhanden (User-Rolle)
+                        // ⭐ Only add ShareholderId if present (user role)
             if (user.ShareholderId.HasValue)
             {
                 claims. Add(new Claim("shareholderId", user.ShareholderId.Value.ToString()));
             }
 
             foreach (var r in roles)
-                claims.Add(new Claim("role", r)); // wichtig für [Authorize(Roles="…")]
+                claims.Add(new Claim("role", r)); // important for [Authorize(Roles="…")]
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

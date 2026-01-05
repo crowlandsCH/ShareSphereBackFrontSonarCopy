@@ -15,11 +15,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
-// ⭐ NEU: Separate Komponente die useAuth() nutzt
+// ⭐ NEW: Separate component that uses useAuth()
 function AppContent() {
   const { user, isAuthenticated, logout } = useAuth();
   
-  // Bestimme die Rolle
+  // Determine the role
   const userRole = isAuthenticated 
     ? (user?.roles?.includes('admin') ? 'admin' : 'user')
     : null;
@@ -81,7 +81,7 @@ function AppContent() {
   );
 }
 
-// ⭐ WICHTIG: useAuth() wird INNERHALB von AuthProvider aufgerufen
+// ⭐ IMPORTANT: useAuth() is called INSIDE AuthProvider
 export default function App() {
   return (
     <AuthProvider>

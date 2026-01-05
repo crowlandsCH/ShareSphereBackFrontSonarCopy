@@ -52,7 +52,7 @@ namespace ShareSphere.Api. Models
     /// </summary>
     public enum TradeType
     {
-        Buy,    // Kauf
-        Sell    // Verkauf
+        Buy,    // Purchase
+        Sell    // Sale
     }
 }

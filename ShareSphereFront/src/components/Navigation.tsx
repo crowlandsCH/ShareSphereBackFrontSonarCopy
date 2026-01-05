@@ -14,27 +14,27 @@ export function Navigation({ userRole, onLogout }: NavigationProps) {
     return location.pathname === path;
   };
 
-  // Links NUR für User-Rolle (nicht für Admin)
+  // Links ONLY for user role (not for admin)
   const userLinks = userRole === 'user' ?  [
     { path: '/', label: 'Dashboard', icon:  Home },
     { path: '/portfolio', label: 'Portfolio', icon: Briefcase },
     { path: '/trade', label:  'Trade', icon: ArrowLeftRight },
   ] : [];
 
-  // Links NUR für Admin-Rolle
+  // Links ONLY for admin role
   const adminLinks = userRole === 'admin' ? [
     { path: '/admin', label:  'Admin', icon: Settings },
   ] : [];
 
-  // Links für nicht-authentifizierte User
+  // Links for non-authenticated users
   const guestLinks = [
     { path: '/login', label: 'Login', icon: LogIn },
     { path: '/register', label: 'Register', icon: UserPlus },
   ];
 
-  // Kombiniere Links basierend auf Rolle
+  // Combine links based on role
   const navLinks = userRole 
-    ? [... userLinks, ...adminLinks]  // User ODER Admin Links
+    ? [... userLinks, ...adminLinks]  // User OR Admin Links
     : guestLinks;                     // Gast Links
 
   return (

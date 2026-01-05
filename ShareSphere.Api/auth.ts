@@ -22,7 +22,7 @@ export async function login(userName: string, password: string): Promise<string>
   return data.token;
 }
 
-// Optional: Wrapper für Folge-Requests mit Bearer-Token
+// Optional: Wrapper for follow-up requests with Bearer token
 export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
   const token = localStorage.getItem("auth_token");
    const headers = new Headers(init.headers || {});

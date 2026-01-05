@@ -10,7 +10,7 @@ namespace ShareSphere.Api.Services
     }
 
     /// <summary>
-    /// Ergebnis einer Share-Kauf-Transaktion
+    /// Result of a share purchase transaction
     /// </summary>
     public class PurchaseResult
     {

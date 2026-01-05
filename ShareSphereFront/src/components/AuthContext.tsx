@@ -17,7 +17,7 @@ interface User {
   id: string;
   username: string;
   displayName: string;
-  shareholderId?:  number;  // Optional:  Nur User haben das! 
+  shareholderId?:  number;  // Optional: Only users have this!
   roles: string[];
   token: string;
   isAdmin: boolean;
@@ -36,7 +36,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }:  { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);  // ⭐ Hier ist setUser definiert!
+  const [user, setUser] = useState<User | null>(null);  // ⭐ Here setUser is defined!
   const [isLoading, setIsLoading] = useState(true);
 
   // Check if user is already logged in on mount
@@ -99,7 +99,7 @@ export function AuthProvider({ children }:  { children: ReactNode }) {
     
     localStorage.setItem('auth_token', token);
     localStorage.setItem('user', JSON. stringify(userData));
-    setUser(userData);  // ⭐ setUser ist jetzt verfügbar!
+    setUser(userData);  // ⭐ setUser is now available!
   };
 
   const register = async (username: string, displayName: string, password: string, email: string) => {

@@ -127,5 +127,7 @@ namespace ShareSphere.Api.Data
             await context.SaveChangesAsync();
             Console.WriteLine($"✓ Seeded {stockExchanges.Count} stock exchanges");
         }
+
+        
     }
 }

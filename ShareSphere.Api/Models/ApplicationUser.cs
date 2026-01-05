@@ -31,7 +31,7 @@ namespace ShareSphere.Api.Models
         /// </summary>
         public bool IsActive { get; set; } = true;
 
-            // ⭐ NEU: Verknüpfung mit Shareholder
+            // ⭐ NEW: Link with Shareholder
              public int?  ShareholderId { get; set; }
     
             [ForeignKey(nameof(ShareholderId))]
