@@ -28,7 +28,7 @@ namespace ShareSphere.Api.Controllers
         );
 
         /// <summary>
-        /// Gibt alle Trades zurück
+        /// Returns all trades
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -38,7 +38,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Gibt einen spezifischen Trade nach ID zurück
+        /// Returns a specific trade by ID
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -51,7 +51,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Gibt alle Trades für ein bestimmtes Unternehmen zurück
+        /// Returns all trades for a specific company
         /// </summary>
         [HttpGet("company/{companyId}")]
         public async Task<IActionResult> GetByCompanyId(int companyId)
@@ -61,7 +61,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Gibt alle Trades für einen bestimmten Broker zurück
+        /// Returns all trades for a specific broker
         /// </summary>
         [HttpGet("broker/{brokerId}")]
         public async Task<IActionResult> GetByBrokerId(int brokerId)
@@ -71,7 +71,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Erstellt einen neuen Trade (für Admins und Users)
+        /// Creates a new trade (for admins and users)
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPost]
@@ -102,7 +102,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Aktualisiert einen bestehenden Trade (für Admins und Users)
+        /// Updates an existing trade (for admins and users)
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPut("{id}")]
@@ -142,7 +142,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Löscht einen Trade (nur für Admins)
+        /// Deletes a trade (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]

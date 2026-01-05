@@ -16,7 +16,7 @@ namespace ShareSphere.Api.Controllers
 
         public AuthController(IAuthService auth) => _auth = auth;
 
-        // DTOs mit Validierung
+        // DTOs with validation
         public record RegisterRequest(
             [Required, MinLength(3)] string UserName,
             [Required, MinLength(3), MaxLength(64)] string DisplayName,
@@ -30,18 +30,18 @@ namespace ShareSphere.Api.Controllers
         );
 
         /// <summary>
-        /// Registriert einen Benutzer und weist (optionale) Rollen zu.
-        /// Gibt ein JWT zurück, das u.a. die Rollen als Claims enthält.
+        /// Registers a user and assigns (optional) roles.
+        /// Returns a JWT that contains the roles as claims, among other things.
         /// </summary>
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest req)
         {
-            // Falls keine Rollen übergeben wurden, Standard-Rolle "user" setzen
+            // If no roles were passed, set default role "user"
 
             var result = await _auth.RegisterAsync(req.UserName, req.DisplayName, req.Password, req.Email, new[] {"user"});
             if (!result.Succeeded)
             {
-                // Einheitliches Fehlerformat (Identity-Fehler, doppelte Usernames, falsche Rollen)
+                // Unified error format (Identity errors, duplicate usernames, wrong roles)
                 return BadRequest(new { errors = result.Errors });
             }
 
@@ -51,7 +51,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Login, gibt JWT zurück.
+        /// Login, returns JWT.
         /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
@@ -61,7 +61,7 @@ namespace ShareSphere.Api.Controllers
             return Ok(new { token });
         }
 
-        // Beispiel: geschützter Endpunkt für beliebige authentifizierte User
+        // Example: protected endpoint for any authenticated user
 
             [Authorize]
             [HttpGet("me")]
@@ -82,9 +82,9 @@ namespace ShareSphere.Api.Controllers
             }
 
 
-        // Beispiel: nur Admins
+        // Example: admins only
         [Authorize(Roles = "admin")]
         [HttpGet("admin-only")]
-        public IActionResult AdminOnly() => Ok("Nur Admins sehen das.");
+        public IActionResult AdminOnly() => Ok("Only admins see this.");
     }
 }

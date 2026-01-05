@@ -25,7 +25,7 @@ namespace ShareSphere.Api.Controllers
         );
 
         /// <summary>
-        /// Gibt alle Shares zurück
+        /// Returns all shares
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -35,7 +35,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Gibt einen spezifischen Share nach ID zurück
+        /// Returns a specific share by ID
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -48,7 +48,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Gibt alle Shares für ein bestimmtes Unternehmen zurück
+        /// Returns all shares for a specific company
         /// </summary>
         [HttpGet("company/{companyId}")]
         public async Task<IActionResult> GetByCompanyId(int companyId)
@@ -58,7 +58,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Erstellt einen neuen Share (für Admins und Users)
+        /// Creates a new share (for admins and users)
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPost]
@@ -76,7 +76,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Aktualisiert einen bestehenden Share (für Admins und Users)
+        /// Updates an existing share (for admins and users)
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPut("{id}")]
@@ -97,7 +97,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Löscht einen Share (nur für Admins)
+        /// Deletes a share (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]

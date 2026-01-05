@@ -43,7 +43,7 @@ public record StockExchangeSimpleResponse(
 
 
         /// <summary>
-        /// Gibt alle Companies zurück
+        /// Returns all companies
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -53,7 +53,7 @@ public record StockExchangeSimpleResponse(
         }
 
         /// <summary>
-        /// Gibt eine spezifische Company nach ID zurück
+        /// Returns a specific company by ID
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -66,7 +66,7 @@ public record StockExchangeSimpleResponse(
         }
 
         /// <summary>
-        /// Erstellt eine neue Company (nur für Admins)
+        /// Creates a new company (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpPost]
@@ -84,7 +84,7 @@ public record StockExchangeSimpleResponse(
         }
 
         /// <summary>
-        /// Aktualisiert eine bestehende Company (nur für Admins)
+        /// Updates an existing company (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpPut("{id}")]
@@ -105,7 +105,7 @@ public record StockExchangeSimpleResponse(
         }
 
         /// <summary>
-        /// Löscht eine Company (nur für Admins)
+        /// Deletes a company (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]

@@ -9,7 +9,7 @@ namespace ShareSphere.Api.Data
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager)
         {
-            // 1) Rollen erstellen, falls sie noch nicht existieren
+            // 1) Create roles if they don't exist yet
             string[] roleNames = { "admin", "user"};
             
             foreach (var roleName in roleNames)
@@ -20,10 +20,10 @@ namespace ShareSphere.Api.Data
                 }
             }
 
-            // 2) Admin-Benutzer erstellen, falls er noch nicht existiert
+            // 2) Create admin user if they don't exist yet
             const string adminUserName = "admin";
             const string adminEmail = "admin@sharesphere.com";
-            const string adminPassword = "Admin123!"; // ⚠️ Ändern Sie dies in Production!
+            const string adminPassword = "Admin123!"; // ⚠️ Change this in production!
 
             var adminUser = await userManager.FindByNameAsync(adminUserName);
             

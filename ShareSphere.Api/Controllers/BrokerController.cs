@@ -25,7 +25,7 @@ namespace ShareSphere.Api.Controllers
         );
 
         /// <summary>
-        /// Gibt alle Broker zurück
+        /// Returns all brokers
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -35,7 +35,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Gibt einen spezifischen Broker nach ID zurück
+        /// Returns a specific broker by ID
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -48,7 +48,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Gibt einen Broker nach Lizenznummer zurück
+        /// Returns a broker by license number
         /// </summary>
         [HttpGet("license/{licenseNumber}")]
         public async Task<IActionResult> GetByLicenseNumber(string licenseNumber)
@@ -61,7 +61,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Erstellt einen neuen Broker (für Admins und Users)
+        /// Creates a new broker (for admins and users)
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPost]
@@ -79,7 +79,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Aktualisiert einen bestehenden Broker (für Admins und Users)
+        /// Updates an existing broker (for admins and users)
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPut("{id}")]
@@ -100,7 +100,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Löscht einen Broker (nur für Admins)
+        /// Deletes a broker (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
