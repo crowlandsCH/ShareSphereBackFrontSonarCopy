@@ -2,20 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../ConfirmDialog';
-
-// Mock API data
-const initialExchanges = [
-  { id: 1, name: 'New York Stock Exchange', code: 'NYSE', location: 'New York, USA', description: 'The largest stock exchange in the world' },
-  { id: 2, name: 'NASDAQ', code: 'NASDAQ', location: 'New York, USA', description: 'Technology-focused stock exchange' },
-  { id: 3, name: 'London Stock Exchange', code: 'LSE', location: 'London, UK', description: 'One of the oldest stock exchanges globally' },
-];
+import { apiFetch } from '../../api/client';
 
 interface Exchange {
-  id: number;
+  exchangeId: number; // ⭐ API verwendet exchangeId
   name: string;
-  code: string;
-  location: string;
-  description: string;
+  country: string;
+  currency: string;
 }
 
 export function ExchangeManagement() {
@@ -27,19 +20,26 @@ export function ExchangeManagement() {
 
   const [formData, setFormData] = useState({
     name: '',
-    code: '',
-    location: '',
-    description: '',
+    country: '',
+    currency:  '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // ⭐ Exchanges laden
   useEffect(() => {
     const fetchExchanges = async () => {
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setExchanges(initialExchanges);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const data = await apiFetch<Exchange[]>('/api/stockexchanges');
+        setExchanges(data);
+      } catch (err) {
+        console.error('Failed to fetch exchanges:', err);
+        toast.error('Failed to load stock exchanges');
+        setExchanges([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchExchanges();
@@ -48,40 +48,35 @@ export function ExchangeManagement() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
+    if (! formData.name.trim()) {
       newErrors.name = 'Exchange name is required';
     }
 
-    if (!formData.code.trim()) {
-      newErrors.code = 'Exchange code is required';
-    } else if (exchanges.some(e => e.code.toUpperCase() === formData.code.toUpperCase() && e.id !== editingExchange?.id)) {
-      newErrors.code = 'An exchange with this code already exists';
+    if (!formData. country.trim()) {
+      newErrors.country = 'Country is required';
     }
 
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+    if (!formData.currency.trim()) {
+      newErrors.currency = 'Currency is required';
+    } else if (formData.currency.length !== 3) {
+      newErrors.currency = 'Currency code must be 3 characters (e.g., USD, EUR)';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleOpenForm = (exchange?: Exchange) => {
+  const handleOpenForm = (exchange?:  Exchange) => {
     if (exchange) {
       setEditingExchange(exchange);
       setFormData({
         name: exchange.name,
-        code: exchange.code,
-        location: exchange.location,
-        description: exchange.description,
+        country: exchange.country,
+        currency: exchange.currency,
       });
     } else {
       setEditingExchange(null);
-      setFormData({ name: '', code: '', location: '', description: '' });
+      setFormData({ name: '', country:  '', currency: '' });
     }
     setErrors({});
     setShowForm(true);
@@ -90,10 +85,11 @@ export function ExchangeManagement() {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingExchange(null);
-    setFormData({ name: '', code: '', location: '', description: '' });
+    setFormData({ name: '', country: '', currency: '' });
     setErrors({});
   };
 
+  // ⭐ CREATE oder UPDATE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -102,31 +98,62 @@ export function ExchangeManagement() {
       return;
     }
 
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const exchangeData = {
+        name: formData.name,
+        country: formData.country,
+        currency: formData.currency. toUpperCase(),
+      };
 
-    const exchangeData = {
-      ...formData,
-      code: formData.code.toUpperCase(),
-    };
+      if (editingExchange) {
+        // ✅ UPDATE:  PUT /api/stockexchanges/{id}
+        await apiFetch(`/api/stockexchanges/${editingExchange.exchangeId}`, {
+          method: 'PUT',
+          body: JSON.stringify(exchangeData),
+        });
 
-    if (editingExchange) {
-      setExchanges(prev => prev.map(e => e.id === editingExchange.id ? { ...e, ...exchangeData } : e));
-      toast.success('Exchange updated successfully');
-    } else {
-      const newExchange = { id: Date.now(), ...exchangeData };
-      setExchanges(prev => [...prev, newExchange]);
-      toast.success('Exchange created successfully');
+        setExchanges(prev => prev.map(e => 
+          e.exchangeId === editingExchange.exchangeId 
+            ? { ...e, ... exchangeData } 
+            :  e
+        ));
+        toast.success('Exchange updated successfully');
+        
+      } else {
+        // ✅ CREATE: POST /api/stockexchanges
+        const newExchange = await apiFetch<Exchange>('/api/stockexchanges', {
+          method: 'POST',
+          body: JSON.stringify(exchangeData),
+        });
+
+        setExchanges(prev => [...prev, newExchange]);
+        toast.success('Exchange created successfully');
+      }
+
+      handleCloseForm();
+      
+    } catch (error:  any) {
+      console.error('Exchange operation failed:', error);
+      toast.error(error?. message || 'Failed to save exchange');
     }
-
-    handleCloseForm();
   };
 
-  const handleDelete = async (exchange: Exchange) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    setExchanges(prev => prev.filter(e => e.id !== exchange.id));
-    setDeleteConfirm(null);
-    toast.success('Exchange deleted successfully');
+  // ⭐ DELETE
+  const handleDelete = async (exchange:  Exchange) => {
+    try {
+      // ✅ DELETE: DELETE /api/stockexchanges/{id}
+      await apiFetch(`/api/stockexchanges/${exchange.exchangeId}`, {
+        method: 'DELETE',
+      });
+      
+      setExchanges(prev => prev.filter(e => e.exchangeId !== exchange. exchangeId));
+      setDeleteConfirm(null);
+      toast.success('Exchange deleted successfully');
+      
+    } catch (error: any) {
+      console.error('Delete exchange failed:', error);
+      toast.error(error?.message || 'Failed to delete exchange');
+    }
   };
 
   if (loading) {
@@ -146,7 +173,7 @@ export function ExchangeManagement() {
         </div>
         <button
           onClick={() => handleOpenForm()}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover: bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           <Plus className="w-4 h-4" />
           Add Exchange
@@ -159,45 +186,49 @@ export function ExchangeManagement() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-gray-700">Name</th>
-                <th className="px-6 py-3 text-left text-gray-700">Code</th>
-                <th className="px-6 py-3 text-left text-gray-700">Location</th>
-                <th className="px-6 py-3 text-left text-gray-700">Description</th>
+                <th className="px-6 py-3 text-left text-gray-700">Country</th>
+                <th className="px-6 py-3 text-left text-gray-700">Currency</th>
                 <th className="px-6 py-3 text-right text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {exchanges.map((exchange) => (
-                <tr key={exchange.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-gray-900">{exchange.name}</td>
-                  <td className="px-6 py-4">
-                    <span className="inline-block px-2 py-1 bg-gray-100 rounded text-sm text-gray-700">
-                      {exchange.code}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{exchange.location}</td>
-                  <td className="px-6 py-4 text-gray-600">
-                    <span className="line-clamp-1">{exchange.description}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleOpenForm(exchange)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                        aria-label={`Edit ${exchange.name}`}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirm(exchange)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        aria-label={`Delete ${exchange.name}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+              {exchanges.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                    No stock exchanges found.  Click "Add Exchange" to create one. 
                   </td>
                 </tr>
-              ))}
+              ) : (
+                exchanges.map((exchange) => (
+                  <tr key={exchange.exchangeId} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 text-gray-900 font-medium">{exchange.name}</td>
+                    <td className="px-6 py-4 text-gray-600">{exchange.country}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-medium">
+                        {exchange.currency}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleOpenForm(exchange)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          aria-label={`Edit ${exchange.name}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(exchange)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          aria-label={`Delete ${exchange.name}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -219,7 +250,7 @@ export function ExchangeManagement() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                   Exchange Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -228,7 +259,7 @@ export function ExchangeManagement() {
                   value={formData.name}
                   onChange={(e) => {
                     setFormData(prev => ({ ...prev, name: e.target.value }));
-                    setErrors(prev => ({ ...prev, name: '' }));
+                    setErrors(prev => ({ ... prev, name: '' }));
                   }}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.name ? 'border-red-500' : 'border-gray-300'
@@ -244,77 +275,53 @@ export function ExchangeManagement() {
               </div>
 
               <div>
-                <label htmlFor="code" className="block text-sm text-gray-700 mb-1">
-                  Exchange Code <span className="text-red-500">*</span>
+                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                  Country <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  id="code"
-                  value={formData.code}
+                  id="country"
+                  value={formData.country}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }));
-                    setErrors(prev => ({ ...prev, code: '' }));
+                    setFormData(prev => ({ ...prev, country: e.target.value }));
+                    setErrors(prev => ({ ...prev, country: '' }));
                   }}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.code ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus: ring-2 focus:ring-blue-500 ${
+                    errors.country ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="e.g., NYSE"
-                  maxLength={10}
+                  placeholder="e.g., United States"
                 />
-                {errors.code && (
+                {errors.country && (
                   <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    {errors.code}
+                    {errors.country}
                   </p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="location" className="block text-sm text-gray-700 mb-1">
-                  Location <span className="text-red-500">*</span>
+                <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">
+                  Currency Code <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  id="location"
-                  value={formData.location}
+                  id="currency"
+                  value={formData.currency}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, location: e.target.value }));
-                    setErrors(prev => ({ ...prev, location: '' }));
+                    setFormData(prev => ({ ...prev, currency: e.target.value. toUpperCase() }));
+                    setErrors(prev => ({ ... prev, currency: '' }));
                   }}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.location ? 'border-red-500' : 'border-gray-300'
+                    errors.currency ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="e.g., New York, USA"
+                  placeholder="e.g., USD"
+                  maxLength={3}
                 />
-                {errors.location && (
+                <p className="mt-1 text-xs text-gray-500">3-letter ISO currency code</p>
+                {errors.currency && (
                   <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    {errors.location}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="description" className="block text-sm text-gray-700 mb-1">
-                  Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, description: e.target.value }));
-                    setErrors(prev => ({ ...prev, description: '' }));
-                  }}
-                  rows={3}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.description ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Brief description of the exchange"
-                />
-                {errors.description && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.description}
+                    {errors.currency}
                   </p>
                 )}
               </div>
@@ -322,7 +329,7 @@ export function ExchangeManagement() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus: outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   {editingExchange ? 'Update Exchange' : 'Create Exchange'}
                 </button>
@@ -342,7 +349,7 @@ export function ExchangeManagement() {
       {deleteConfirm && (
         <ConfirmDialog
           title="Delete Exchange"
-          message={`Are you sure you want to delete "${deleteConfirm.name}"? This will also affect all associated companies and shares.`}
+          message={`Are you sure you want to delete "${deleteConfirm.name}"?  This will also affect all associated companies and shares.`}
           confirmLabel="Delete"
           cancelLabel="Cancel"
           onConfirm={() => handleDelete(deleteConfirm)}

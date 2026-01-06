@@ -2,20 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../ConfirmDialog';
-
-// Mock API data
-// API Endpoint: GET /api/admin/brokers
-const initialBrokers = [
-  { id: 1, name: 'E*TRADE', description: 'Leading online broker', contactEmail: 'support@etrade.com' },
-  { id: 2, name: 'TD Ameritrade', description: 'Full-service brokerage', contactEmail: 'help@tdameritrade.com' },
-  { id: 3, name: 'Robinhood', description: 'Commission-free trading', contactEmail: 'support@robinhood.com' },
-];
+import { apiFetch } from '../../api/client';
 
 interface Broker {
-  id: number;
+  brokerId: number; // ⭐ Geändert von id zu brokerId
   name: string;
-  description: string;
-  contactEmail: string;
+  licenseNumber: string;
+  email: string;
 }
 
 export function BrokerManagement() {
@@ -27,41 +20,48 @@ export function BrokerManagement() {
 
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    contactEmail: '',
+    licenseNumber: '',
+    email: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Simulated API call: GET /api/admin/brokers
+  // ⭐ Brokers laden
   useEffect(() => {
     const fetchBrokers = async () => {
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setBrokers(initialBrokers);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const data = await apiFetch<Broker[]>('/api/brokers');
+        setBrokers(data);
+      } catch (err) {
+        console.error('Failed to fetch brokers:', err);
+        toast.error('Failed to load brokers');
+        setBrokers([]);
+      } finally {
+        setLoading(false);
+      }
     };
-
+  
     fetchBrokers();
   }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
+    if (! formData.name.trim()) {
       newErrors.name = 'Broker name is required';
-    } else if (brokers.some(b => b.name.toLowerCase() === formData.name.toLowerCase() && b.id !== editingBroker?.id)) {
+    } else if (brokers. some(b => b.name. toLowerCase() === formData.name.toLowerCase() && b.brokerId !== editingBroker?.brokerId)) {
       newErrors.name = 'A broker with this name already exists';
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+    if (!formData.licenseNumber.trim()) {
+      newErrors.licenseNumber = 'License Number is required';
     }
 
-    if (!formData.contactEmail.trim()) {
-      newErrors.contactEmail = 'Contact email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
-      newErrors.contactEmail = 'Please enter a valid email address';
+    if (!formData.email.trim()) {
+      newErrors.email = 'Contact email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
     }
 
     setErrors(newErrors);
@@ -73,12 +73,12 @@ export function BrokerManagement() {
       setEditingBroker(broker);
       setFormData({
         name: broker.name,
-        description: broker.description,
-        contactEmail: broker.contactEmail,
+        licenseNumber: broker.licenseNumber,
+        email: broker.email,
       });
     } else {
       setEditingBroker(null);
-      setFormData({ name: '', description: '', contactEmail: '' });
+      setFormData({ name:  '', licenseNumber: '', email:  '' });
     }
     setErrors({});
     setShowForm(true);
@@ -87,10 +87,11 @@ export function BrokerManagement() {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingBroker(null);
-    setFormData({ name: '', description: '', contactEmail: '' });
+    setFormData({ name: '', licenseNumber: '', email: '' });
     setErrors({});
   };
 
+  // ⭐ CREATE oder UPDATE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -99,28 +100,62 @@ export function BrokerManagement() {
       return;
     }
 
-    // Simulated API call: POST /api/admin/brokers or PUT /api/admin/brokers/{id}
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const brokerData = {
+        name: formData.name,
+        licenseNumber: formData.licenseNumber,
+        email: formData.email,
+      };
 
-    if (editingBroker) {
-      setBrokers(prev => prev.map(b => b.id === editingBroker.id ? { ...b, ...formData } : b));
-      toast.success('Broker updated successfully');
-    } else {
-      const newBroker = { id: Date.now(), ...formData };
-      setBrokers(prev => [...prev, newBroker]);
-      toast.success('Broker created successfully');
+      if (editingBroker) {
+        // ✅ UPDATE:  PUT /api/brokers/{id}
+        await apiFetch(`/api/brokers/${editingBroker.brokerId}`, {
+          method: 'PUT',
+          body: JSON.stringify(brokerData),
+        });
+
+        setBrokers(prev => prev.map(b => 
+          b.brokerId === editingBroker.brokerId 
+            ? { ...b, ...brokerData } 
+            : b
+        ));
+        toast.success('Broker updated successfully');
+        
+      } else {
+        // ✅ CREATE: POST /api/brokers
+        const newBroker = await apiFetch<Broker>('/api/brokers', {
+          method: 'POST',
+          body: JSON. stringify(brokerData),
+        });
+
+        setBrokers(prev => [...prev, newBroker]);
+        toast.success('Broker created successfully');
+      }
+
+      handleCloseForm();
+      
+    } catch (error:  any) {
+      console.error('Broker operation failed:', error);
+      toast.error(error?. message || 'Failed to save broker');
     }
-
-    handleCloseForm();
   };
 
+  // ⭐ DELETE
   const handleDelete = async (broker: Broker) => {
-    // Simulated API call: DELETE /api/admin/brokers/{id}
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    setBrokers(prev => prev.filter(b => b.id !== broker.id));
-    setDeleteConfirm(null);
-    toast.success('Broker deleted successfully');
+    try {
+      // ✅ DELETE: DELETE /api/brokers/{id}
+      await apiFetch(`/api/brokers/${broker.brokerId}`, {
+        method: 'DELETE',
+      });
+      
+      setBrokers(prev => prev.filter(b => b.brokerId !== broker.brokerId));
+      setDeleteConfirm(null);
+      toast.success('Broker deleted successfully');
+      
+    } catch (error: any) {
+      console.error('Delete broker failed:', error);
+      toast.error(error?.message || 'Failed to delete broker');
+    }
   };
 
   if (loading) {
@@ -155,37 +190,45 @@ export function BrokerManagement() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-3 text-left text-gray-700">Name</th>
-                <th className="px-6 py-3 text-left text-gray-700">Description</th>
+                <th className="px-6 py-3 text-left text-gray-700">License Number</th>
                 <th className="px-6 py-3 text-left text-gray-700">Contact Email</th>
                 <th className="px-6 py-3 text-right text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {brokers.map((broker) => (
-                <tr key={broker.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-gray-900">{broker.name}</td>
-                  <td className="px-6 py-4 text-gray-600">{broker.description}</td>
-                  <td className="px-6 py-4 text-gray-600">{broker.contactEmail}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleOpenForm(broker)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                        aria-label={`Edit ${broker.name}`}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirm(broker)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        aria-label={`Delete ${broker.name}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+              {brokers. length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                    No brokers found.  Click "Add Broker" to create one.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                brokers.map((broker) => (
+                  <tr key={broker.brokerId} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 text-gray-900">{broker. name}</td>
+                    <td className="px-6 py-4 text-gray-600">{broker.licenseNumber}</td>
+                    <td className="px-6 py-4 text-gray-600">{broker.email}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleOpenForm(broker)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          aria-label={`Edit ${broker.name}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(broker)}
+                          className="p-2 text-red-600 hover: bg-red-50 rounded-md transition-colors"
+                          aria-label={`Delete ${broker.name}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -216,11 +259,11 @@ export function BrokerManagement() {
                   id="name"
                   value={formData.name}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, name: e.target.value }));
+                    setFormData(prev => ({ ...prev, name: e. target.value }));
                     setErrors(prev => ({ ...prev, name: '' }));
                   }}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.name ? 'border-red-500' : 'border-gray-300'
+                    errors. name ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="e.g., E*TRADE"
                 />
@@ -233,51 +276,51 @@ export function BrokerManagement() {
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm text-gray-700 mb-1">
-                  Description <span className="text-red-500">*</span>
+                <label htmlFor="licenseNumber" className="block text-sm text-gray-700 mb-1">
+                  License Number <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  id="description"
-                  value={formData.description}
+                <input
+                  type="text"
+                  id="licenseNumber"
+                  value={formData.licenseNumber}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, description: e.target.value }));
-                    setErrors(prev => ({ ...prev, description: '' }));
+                    setFormData(prev => ({ ...prev, licenseNumber: e.target. value }));
+                    setErrors(prev => ({ ...prev, licenseNumber: '' }));
                   }}
-                  rows={3}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.description ? 'border-red-500' : 'border-gray-300'
+                    errors. licenseNumber ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="Brief description of the broker"
+                  placeholder="LIC-123456"
                 />
-                {errors.description && (
+                {errors.licenseNumber && (
                   <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    {errors.description}
+                    {errors.licenseNumber}
                   </p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="contactEmail" className="block text-sm text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm text-gray-700 mb-1">
                   Contact Email <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
-                  id="contactEmail"
-                  value={formData.contactEmail}
+                  id="email"
+                  value={formData.email}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, contactEmail: e.target.value }));
-                    setErrors(prev => ({ ...prev, contactEmail: '' }));
+                    setFormData(prev => ({ ...prev, email: e.target.value }));
+                    setErrors(prev => ({ ...prev, email: '' }));
                   }}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.contactEmail ? 'border-red-500' : 'border-gray-300'
+                    errors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="support@broker.com"
                 />
-                {errors.contactEmail && (
+                {errors.email && (
                   <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    {errors.contactEmail}
+                    {errors.email}
                   </p>
                 )}
               </div>
@@ -285,7 +328,7 @@ export function BrokerManagement() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus: outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   {editingBroker ? 'Update Broker' : 'Create Broker'}
                 </button>
@@ -306,7 +349,7 @@ export function BrokerManagement() {
       {deleteConfirm && (
         <ConfirmDialog
           title="Delete Broker"
-          message={`Are you sure you want to delete "${deleteConfirm.name}"? This action cannot be undone.`}
+          message={`Are you sure you want to delete "${deleteConfirm.name}"?  This action cannot be undone.`}
           confirmLabel="Delete"
           cancelLabel="Cancel"
           onConfirm={() => handleDelete(deleteConfirm)}

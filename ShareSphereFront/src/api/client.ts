@@ -1,17 +1,16 @@
-const API_BASE_URL = import. meta.env.VITE_API_BASE_URL as string;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 if (!API_BASE_URL) {
   throw new Error('VITE_API_BASE_URL is not defined');
 }
 
-// ⭐ ERWEITERT:  Unterstützt jetzt GET, POST, PUT, DELETE mit options
 export async function apiFetch<T>(
   path: string, 
   options?: RequestInit
 ): Promise<T> {
   const token = localStorage.getItem('auth_token');
   
-  const headers = new Headers(options?. headers || {});
+  const headers = new Headers(options?.headers || {});
   headers.set('Content-Type', 'application/json');
   
   if (token) {
@@ -24,9 +23,28 @@ export async function apiFetch<T>(
   });
 
   if (!response.ok) {
-    const errorData = await response. json().catch(() => ({}));
+    const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || `API error: ${response.status}`);
   }
 
-  return response.json();
+  // ⭐ NEU: Prüfe ob Response Body vorhanden ist
+  const contentType = response.headers.get('content-type');
+  const contentLength = response.headers.get('content-length');
+  
+  // Wenn kein Content oder Content-Length ist 0, gib leeres Objekt zurück
+  if (
+    contentLength === '0' || 
+    ! contentType || 
+    !contentType.includes('application/json')
+  ) {
+    return {} as T;
+  }
+
+  // Versuche JSON zu parsen
+  const text = await response.text();
+  if (! text) {
+    return {} as T;
+  }
+
+  return JSON.parse(text);
 }
