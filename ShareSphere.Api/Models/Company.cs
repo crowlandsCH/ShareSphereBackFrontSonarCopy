@@ -20,6 +20,10 @@ namespace ShareSphere. Api.Models
         [RegularExpression(@"^[A-Z]+$", ErrorMessage = "Ticker symbol must contain only uppercase letters.")]
         public string TickerSymbol { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Sector is required.")]
+        [StringLength(100, ErrorMessage = "Sector must not exceed 100 characters.")]
+        public string Sector { get; set; } = string.Empty;
+
         [Required]
         public int ExchangeId { get; set; }
 

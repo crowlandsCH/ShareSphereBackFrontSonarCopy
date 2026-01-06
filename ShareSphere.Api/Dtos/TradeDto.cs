@@ -6,6 +6,7 @@ namespace ShareSphere.Api.Models. Dtos
         public int ShareholderId { get; set; }
         public int CompanyId { get; set; }
         public string CompanyName { get; set; } = string.Empty;
+        public string CompanySector { get; set; } = string.Empty;
         public int BrokerId { get; set; }
         public string BrokerName { get; set; } = string.Empty;
         public TradeType Type { get; set; }
