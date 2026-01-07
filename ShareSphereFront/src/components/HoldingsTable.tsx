@@ -2,7 +2,7 @@ import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface HoldingsTableProps {
-  holdings: Array<{
+  holdings?: Array<{
     id: number;
     shareId: number;
     companyName: string;
@@ -15,7 +15,7 @@ interface HoldingsTableProps {
   }>;
 }
 
-export function HoldingsTable({ holdings }: HoldingsTableProps) {
+export function HoldingsTable({ holdings = [] }: HoldingsTableProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
