@@ -23,6 +23,7 @@ namespace ShareSphere.Api.Controllers
             [Required, StringLength(10, MinimumLength = 1)]
             [RegularExpression(@"^[A-Z]+$", ErrorMessage = "Ticker symbol must contain only uppercase letters")]
             string TickerSymbol,
+            [Required, MaxLength(100)] string Sector,
             [Required] int ExchangeId
         );
 
@@ -30,6 +31,7 @@ namespace ShareSphere.Api.Controllers
     int CompanyId,
     string Name,
     string TickerSymbol,
+    string Sector,
     int ExchangeId,
     StockExchangeSimpleResponse?  StockExchange
 );
@@ -76,6 +78,7 @@ public record StockExchangeSimpleResponse(
             {
                 Name = request.Name,
                 TickerSymbol = request.TickerSymbol,
+                Sector = request.Sector,
                 ExchangeId = request.ExchangeId
             };
 
@@ -94,6 +97,7 @@ public record StockExchangeSimpleResponse(
             {
                 Name = request.Name,
                 TickerSymbol = request. TickerSymbol,
+                Sector = request.Sector,
                 ExchangeId = request.ExchangeId
             };
 

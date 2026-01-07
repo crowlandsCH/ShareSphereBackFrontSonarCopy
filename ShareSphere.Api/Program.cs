@@ -140,6 +140,13 @@ using (var scope = app.Services.CreateScope())
         
         await DbInitializer.SeedAdminUser(userManager, roleManager);
         await DbInitializer.SeedStockExchanges(dbContext);
+        await DbInitializer.SeedCompanies(dbContext);
+        await DbInitializer.SeedShares(dbContext);
+        await DbInitializer.SeedShareholders(dbContext);
+        await DbInitializer.SeedBrokers(dbContext);
+        await DbInitializer.SeedTrades(dbContext);
+        await DbInitializer.SeedApplicationUsers(dbContext, userManager);
+
     }
     catch (Exception ex)
     {
@@ -184,4 +191,4 @@ if (!app.Environment.IsDevelopment())
     app.MapFallbackToFile("index.html");
 }
 
-app.Run();
+await app.RunAsync();
