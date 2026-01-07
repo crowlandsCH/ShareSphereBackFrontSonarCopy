@@ -312,9 +312,6 @@ namespace ShareSphere.Api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PortfolioId"));
 
-                    b.Property<int?>("CompanyId")
-                        .HasColumnType("int");
-
                     b.Property<int>("ShareId")
                         .HasColumnType("int");
 
@@ -325,8 +322,6 @@ namespace ShareSphere.Api.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("PortfolioId");
-
-                    b.HasIndex("CompanyId");
 
                     b.HasIndex("ShareId");
 
@@ -526,10 +521,6 @@ namespace ShareSphere.Api.Migrations
 
             modelBuilder.Entity("ShareSphere.Api.Models.Portfolio", b =>
                 {
-                    b.HasOne("ShareSphere.Api.Models.Company", null)
-                        .WithMany("Portfolios")
-                        .HasForeignKey("CompanyId");
-
                     b.HasOne("ShareSphere.Api.Models.Share", "Share")
                         .WithMany()
                         .HasForeignKey("ShareId")
@@ -592,8 +583,6 @@ namespace ShareSphere.Api.Migrations
 
             modelBuilder.Entity("ShareSphere.Api.Models.Company", b =>
                 {
-                    b.Navigation("Portfolios");
-
                     b.Navigation("Shares");
 
                     b.Navigation("Trades");

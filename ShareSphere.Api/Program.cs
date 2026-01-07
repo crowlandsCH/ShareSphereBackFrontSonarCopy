@@ -145,6 +145,7 @@ using (var scope = app.Services.CreateScope())
         await DbInitializer.SeedShareholders(dbContext);
         await DbInitializer.SeedBrokers(dbContext);
         await DbInitializer.SeedTrades(dbContext);
+        await DbInitializer.SeedPortfolios(dbContext);
         await DbInitializer.SeedApplicationUsers(dbContext, userManager);
 
     }

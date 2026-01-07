@@ -19,7 +19,6 @@ namespace ShareSphere.Api.Services
                 .Include(c => c.StockExchange)
                 .Include(c => c.Shares)
                 .Include(c => c.Trades)
-                .Include(c => c.Portfolios)
                 .ToListAsync();
         }
 
@@ -29,7 +28,6 @@ namespace ShareSphere.Api.Services
                 .Include(c => c.StockExchange)
                 .Include(c => c.Shares)
                 .Include(c => c.Trades)
-                .Include(c => c.Portfolios)
                 .FirstOrDefaultAsync(c => c.CompanyId == companyId);
         }
 

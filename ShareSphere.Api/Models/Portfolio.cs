@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations. Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ShareSphere. Api.Models
+namespace ShareSphere.Api.Models
 {
     /// <summary>
     /// Represents a shareholder's holdings in a specific company.
@@ -11,8 +11,7 @@ namespace ShareSphere. Api.Models
         [Key]
         public int PortfolioId { get; set; }
 
-        [Required]
-        public int ShareholderId { get; set; }
+        [Required] public int ShareholderId { get; set; }
 
         [Required]
         public int ShareId { get; set; }
@@ -20,11 +19,8 @@ namespace ShareSphere. Api.Models
         [Required]
         public int amount { get; set; }
 
-        // Navigation properties
-        [ForeignKey(nameof(ShareholderId))]
-        public Shareholder?  Shareholder { get; set; }
-
-        [ForeignKey(nameof(ShareId))]
+        // Navigation properties - NO [ForeignKey] attributes!
+        public Shareholder? Shareholder { get; set; }
         public Share? Share { get; set; }
     }
 }

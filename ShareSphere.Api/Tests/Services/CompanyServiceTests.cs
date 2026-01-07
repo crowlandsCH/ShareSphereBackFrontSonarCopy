@@ -101,7 +101,6 @@ namespace ShareSphere.Api.Tests.Services
             Assert.NotNull(firstCompany.Shares);
             Assert.Single(firstCompany.Shares);
             Assert.NotNull(firstCompany.Trades);
-            Assert.NotNull(firstCompany.Portfolios);
         }
 
         [Fact]
