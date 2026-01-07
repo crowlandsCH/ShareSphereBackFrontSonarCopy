@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Loader2, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { apiFetch } from '../../api/client';
 
 interface Exchange {
-  exchangeId: number; // ⭐ API verwendet exchangeId
+  exchangeId:  number;
   name: string;
   country: string;
-  currency: string;
+  currency:  string;
 }
+
+// ⭐ Sort configuration
+type SortField = 'name' | 'country' | 'currency';
+type SortDirection = 'asc' | 'desc' | null;
 
 export function ExchangeManagement() {
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
@@ -18,10 +22,14 @@ export function ExchangeManagement() {
   const [editingExchange, setEditingExchange] = useState<Exchange | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Exchange | null>(null);
 
+  // ⭐ Sorting state
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
   const [formData, setFormData] = useState({
     name: '',
     country: '',
-    currency:  '',
+    currency:   '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -45,6 +53,55 @@ export function ExchangeManagement() {
     fetchExchanges();
   }, []);
 
+  // ⭐ Handle column sort
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Cycle through:   asc -> desc -> null
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortDirection(null);
+        setSortField(null);
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // ⭐ Get sorted exchanges
+  const getSortedExchanges = () => {
+    if (!sortField || !sortDirection) {
+      return exchanges;
+    }
+
+    return [...exchanges].sort((a, b) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
+
+      // String comparison (case-insensitive)
+      const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  // ⭐ Render sort icon
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
+    }
+
+    if (sortDirection === 'asc') {
+      return <ArrowUp className="w-4 h-4 text-blue-600" />;
+    }
+
+    if (sortDirection === 'desc') {
+      return <ArrowDown className="w-4 h-4 text-blue-600" />;
+    }
+
+    return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -58,7 +115,7 @@ export function ExchangeManagement() {
 
     if (!formData.currency.trim()) {
       newErrors.currency = 'Currency is required';
-    } else if (formData.currency.length !== 3) {
+    } else if (formData.currency. length !== 3) {
       newErrors.currency = 'Currency code must be 3 characters (e.g., USD, EUR)';
     }
 
@@ -66,7 +123,7 @@ export function ExchangeManagement() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleOpenForm = (exchange?:  Exchange) => {
+  const handleOpenForm = (exchange? :  Exchange) => {
     if (exchange) {
       setEditingExchange(exchange);
       setFormData({
@@ -76,7 +133,7 @@ export function ExchangeManagement() {
       });
     } else {
       setEditingExchange(null);
-      setFormData({ name: '', country:  '', currency: '' });
+      setFormData({ name: '', country:   '', currency: '' });
     }
     setErrors({});
     setShowForm(true);
@@ -102,20 +159,20 @@ export function ExchangeManagement() {
       const exchangeData = {
         name: formData.name,
         country: formData.country,
-        currency: formData.currency. toUpperCase(),
+        currency: formData. currency.toUpperCase(),
       };
 
       if (editingExchange) {
-        // ✅ UPDATE:  PUT /api/stockexchanges/{id}
+        // ✅ UPDATE:   PUT /api/stockexchanges/{id}
         await apiFetch(`/api/stockexchanges/${editingExchange.exchangeId}`, {
           method: 'PUT',
-          body: JSON.stringify(exchangeData),
+          body:  JSON.stringify(exchangeData),
         });
 
         setExchanges(prev => prev.map(e => 
           e.exchangeId === editingExchange.exchangeId 
             ? { ...e, ... exchangeData } 
-            :  e
+            :   e
         ));
         toast.success('Exchange updated successfully');
         
@@ -132,14 +189,14 @@ export function ExchangeManagement() {
 
       handleCloseForm();
       
-    } catch (error:  any) {
+    } catch (error:   any) {
       console.error('Exchange operation failed:', error);
-      toast.error(error?. message || 'Failed to save exchange');
+      toast.error(error?.message || 'Failed to save exchange');
     }
   };
 
   // ⭐ DELETE
-  const handleDelete = async (exchange:  Exchange) => {
+  const handleDelete = async (exchange:   Exchange) => {
     try {
       // ✅ DELETE: DELETE /api/stockexchanges/{id}
       await apiFetch(`/api/stockexchanges/${exchange.exchangeId}`, {
@@ -150,7 +207,7 @@ export function ExchangeManagement() {
       setDeleteConfirm(null);
       toast.success('Exchange deleted successfully');
       
-    } catch (error: any) {
+    } catch (error:  any) {
       console.error('Delete exchange failed:', error);
       toast.error(error?.message || 'Failed to delete exchange');
     }
@@ -164,6 +221,8 @@ export function ExchangeManagement() {
     );
   }
 
+  const sortedExchanges = getSortedExchanges();
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -173,7 +232,7 @@ export function ExchangeManagement() {
         </div>
         <button
           onClick={() => handleOpenForm()}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover: bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover: bg-blue-700 transition-colors focus:outline-none focus: ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           <Plus className="w-4 h-4" />
           Add Exchange
@@ -185,21 +244,45 @@ export function ExchangeManagement() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-gray-700">Name</th>
-                <th className="px-6 py-3 text-left text-gray-700">Country</th>
-                <th className="px-6 py-3 text-left text-gray-700">Currency</th>
+                <th 
+                  className="px-6 py-3 text-left text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Name</span>
+                    {renderSortIcon('name')}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                  onClick={() => handleSort('country')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Country</span>
+                    {renderSortIcon('country')}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                  onClick={() => handleSort('currency')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Currency</span>
+                    {renderSortIcon('currency')}
+                  </div>
+                </th>
                 <th className="px-6 py-3 text-right text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {exchanges.length === 0 ? (
+              {sortedExchanges.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                    No stock exchanges found.  Click "Add Exchange" to create one. 
+                    No stock exchanges found.   Click "Add Exchange" to create one.  
                   </td>
                 </tr>
               ) : (
-                exchanges.map((exchange) => (
+                sortedExchanges.map((exchange) => (
                   <tr key={exchange.exchangeId} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-gray-900 font-medium">{exchange.name}</td>
                     <td className="px-6 py-4 text-gray-600">{exchange.country}</td>
@@ -219,7 +302,7 @@ export function ExchangeManagement() {
                         </button>
                         <button
                           onClick={() => setDeleteConfirm(exchange)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          className="p-2 text-red-600 hover: bg-red-50 rounded-md transition-colors"
                           aria-label={`Delete ${exchange.name}`}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -259,17 +342,17 @@ export function ExchangeManagement() {
                   value={formData.name}
                   onChange={(e) => {
                     setFormData(prev => ({ ...prev, name: e.target.value }));
-                    setErrors(prev => ({ ... prev, name: '' }));
+                    setErrors(prev => ({ ...prev, name: '' }));
                   }}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.name ? 'border-red-500' : 'border-gray-300'
+                    errors.name ? 'border-red-500' :  'border-gray-300'
                   }`}
                   placeholder="e.g., New York Stock Exchange"
                 />
                 {errors.name && (
                   <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    {errors.name}
+                    {errors. name}
                   </p>
                 )}
               </div>
@@ -283,11 +366,11 @@ export function ExchangeManagement() {
                   id="country"
                   value={formData.country}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, country: e.target.value }));
+                    setFormData(prev => ({ ... prev, country: e.target. value }));
                     setErrors(prev => ({ ...prev, country: '' }));
                   }}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus: ring-2 focus:ring-blue-500 ${
-                    errors.country ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.country ?  'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="e.g., United States"
                 />

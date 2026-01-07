@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Loader2, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { apiFetch } from '../../api/client';
 
 interface Broker {
-  brokerId: number; // ⭐ Geändert von id zu brokerId
+  brokerId: number;
   name: string;
   licenseNumber: string;
   email: string;
 }
+
+// ⭐ Sort configuration
+type SortField = 'name' | 'licenseNumber' | 'email';
+type SortDirection = 'asc' | 'desc' | null;
 
 export function BrokerManagement() {
   const [brokers, setBrokers] = useState<Broker[]>([]);
@@ -17,6 +21,10 @@ export function BrokerManagement() {
   const [showForm, setShowForm] = useState(false);
   const [editingBroker, setEditingBroker] = useState<Broker | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Broker | null>(null);
+
+  // ⭐ Sorting state
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -45,10 +53,59 @@ export function BrokerManagement() {
     fetchBrokers();
   }, []);
 
+  // ⭐ Handle column sort
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Cycle through:  asc -> desc -> null
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortDirection(null);
+        setSortField(null);
+      }
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // ⭐ Get sorted brokers
+  const getSortedBrokers = () => {
+    if (!sortField || !sortDirection) {
+      return brokers;
+    }
+
+    return [...brokers].sort((a, b) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
+
+      // String comparison (case-insensitive)
+      const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  // ⭐ Render sort icon
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
+    }
+
+    if (sortDirection === 'asc') {
+      return <ArrowUp className="w-4 h-4 text-blue-600" />;
+    }
+
+    if (sortDirection === 'desc') {
+      return <ArrowDown className="w-4 h-4 text-blue-600" />;
+    }
+
+    return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (! formData.name.trim()) {
+    if (!formData.name.trim()) {
       newErrors.name = 'Broker name is required';
     } else if (brokers. some(b => b.name. toLowerCase() === formData.name.toLowerCase() && b.brokerId !== editingBroker?.brokerId)) {
       newErrors.name = 'A broker with this name already exists';
@@ -116,7 +173,7 @@ export function BrokerManagement() {
 
         setBrokers(prev => prev.map(b => 
           b.brokerId === editingBroker.brokerId 
-            ? { ...b, ...brokerData } 
+            ? { ...b, ... brokerData } 
             : b
         ));
         toast.success('Broker updated successfully');
@@ -125,7 +182,7 @@ export function BrokerManagement() {
         // ✅ CREATE: POST /api/brokers
         const newBroker = await apiFetch<Broker>('/api/brokers', {
           method: 'POST',
-          body: JSON. stringify(brokerData),
+          body: JSON.stringify(brokerData),
         });
 
         setBrokers(prev => [...prev, newBroker]);
@@ -166,6 +223,8 @@ export function BrokerManagement() {
     );
   }
 
+  const sortedBrokers = getSortedBrokers();
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -176,7 +235,7 @@ export function BrokerManagement() {
         </div>
         <button
           onClick={() => handleOpenForm()}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus: outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           <Plus className="w-4 h-4" />
           Add Broker
@@ -189,23 +248,47 @@ export function BrokerManagement() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-gray-700">Name</th>
-                <th className="px-6 py-3 text-left text-gray-700">License Number</th>
-                <th className="px-6 py-3 text-left text-gray-700">Contact Email</th>
+                <th 
+                  className="px-6 py-3 text-left text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Name</span>
+                    {renderSortIcon('name')}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                  onClick={() => handleSort('licenseNumber')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>License Number</span>
+                    {renderSortIcon('licenseNumber')}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                  onClick={() => handleSort('email')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Contact Email</span>
+                    {renderSortIcon('email')}
+                  </div>
+                </th>
                 <th className="px-6 py-3 text-right text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {brokers. length === 0 ? (
+              {sortedBrokers.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
                     No brokers found.  Click "Add Broker" to create one.
                   </td>
                 </tr>
               ) : (
-                brokers.map((broker) => (
+                sortedBrokers.map((broker) => (
                   <tr key={broker.brokerId} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-gray-900">{broker. name}</td>
+                    <td className="px-6 py-4 text-gray-900">{broker.name}</td>
                     <td className="px-6 py-4 text-gray-600">{broker.licenseNumber}</td>
                     <td className="px-6 py-4 text-gray-600">{broker.email}</td>
                     <td className="px-6 py-4">
@@ -259,18 +342,18 @@ export function BrokerManagement() {
                   id="name"
                   value={formData.name}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, name: e. target.value }));
+                    setFormData(prev => ({ ...prev, name: e.target.value }));
                     setErrors(prev => ({ ...prev, name: '' }));
                   }}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors. name ? 'border-red-500' : 'border-gray-300'
+                    errors.name ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="e.g., E*TRADE"
                 />
                 {errors.name && (
                   <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    {errors.name}
+                    {errors. name}
                   </p>
                 )}
               </div>
@@ -284,11 +367,11 @@ export function BrokerManagement() {
                   id="licenseNumber"
                   value={formData.licenseNumber}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, licenseNumber: e.target. value }));
+                    setFormData(prev => ({ ...prev, licenseNumber: e.target.value }));
                     setErrors(prev => ({ ...prev, licenseNumber: '' }));
                   }}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors. licenseNumber ? 'border-red-500' : 'border-gray-300'
+                    errors.licenseNumber ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="LIC-123456"
                 />
@@ -307,12 +390,12 @@ export function BrokerManagement() {
                 <input
                   type="email"
                   id="email"
-                  value={formData.email}
+                  value={formData. email}
                   onChange={(e) => {
                     setFormData(prev => ({ ...prev, email: e.target.value }));
                     setErrors(prev => ({ ...prev, email: '' }));
                   }}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus: ring-blue-500 ${
                     errors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="support@broker.com"
