@@ -33,7 +33,6 @@ namespace ShareSphere. Api.Models
         public StockExchange? StockExchange { get; set; }
 
         public ICollection<Share> Shares { get; set; } = new List<Share>();
-        public ICollection<Trade> Trades { get; set; } = new List<Trade>();
-        public ICollection<Portfolio> Portfolios { get; set; } = new List<Portfolio>();
+        public ICollection<Trade> Trades { get; set; } = new List<Trade>();       
     }
 }

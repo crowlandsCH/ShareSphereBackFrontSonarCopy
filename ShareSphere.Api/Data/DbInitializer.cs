@@ -175,6 +175,30 @@ namespace ShareSphere.Api.Data
                 ("SAP SE", "SAP", "Technology")
             );
 
+            AddCompaniesForExchange("Shanghai Stock Exchange",
+                ("Industrial and Commercial Bank of China", "ICBC", "Financial Services"),
+                ("China Construction Bank", "CCB", "Financial Services"),
+                ("PetroChina Company Limited", "PTR", "Energy"),
+                ("Ping An Insurance", "PNGAY", "Insurance"),
+                ("Kweichow Moutai", "KMTUY", "Beverages")
+            );
+
+            AddCompaniesForExchange("Frankfurt Stock Exchange",
+                ("Siemens AG", "SIE", "Industrial"),
+                ("Volkswagen AG", "VOW", "Automotive"),
+                ("Bayer AG", "BAYRY", "Pharmaceuticals"),
+                ("Deutsche Bank AG", "DB", "Financial Services"),
+                ("Allianz SE", "ALVG", "Insurance")
+            );
+
+            AddCompaniesForExchange("Toronto Stock Exchange",
+                ("Royal Bank of Canada", "RY", "Financial Services"),
+                ("Toronto-Dominion Bank", "TD", "Financial Services"),
+                ("Enbridge Inc.", "ENB", "Energy"),
+                ("Canadian Natural Resources", "CNQ", "Energy"),
+                ("Shopify Inc.", "SHOP", "E-commerce")
+            );
+
             if (companies.Count != 0)
             {
                 context.Companies.AddRange(companies);
@@ -375,29 +399,32 @@ namespace ShareSphere.Api.Data
 
             // Get IDs for foreign keys using AsNoTracking
             var brokerIds = await context.Brokers.AsNoTracking().Select(b => b.BrokerId).ToListAsync();
-            var shareholderIds = await context.Shareholders.AsNoTracking().Select(s => s.ShareholderId).ToListAsync();
+            var shareholderIds = await context.Shareholders.AsNoTracking().Select(s => s.ShareholderId).Take(5).ToListAsync();
             var companyIds = await context.Companies.AsNoTracking().Select(c => c.CompanyId).Take(20).ToListAsync();
 
             var random = new Random(54321); // Fixed seed for reproducibility
-            var trades = new List<Trade>(10); // Pre-allocate capacity
+            var trades = new List<Trade>(20); // Pre-allocate capacity
 
-            // Generate 10 random trades over the past 30 days
-            for (int i = 0; i < 10; i++)
+            // Generate 4 trades per shareholder (5 shareholders × 4 = 20 trades) over the past 30 days
+            foreach (var shareholderId in shareholderIds)
             {
-                var tradeType = random.Next(2) == 0 ? TradeType.Buy : TradeType.Sell;
-                var daysAgo = random.Next(0, 30);
-                var hoursAgo = random.Next(0, 24);
-                
-                trades.Add(new Trade
+                for (int i = 0; i < 4; i++)
                 {
-                    BrokerId = brokerIds[random.Next(brokerIds.Count)],
-                    ShareholderId = shareholderIds[random.Next(shareholderIds.Count)],
-                    CompanyId = companyIds[random.Next(companyIds.Count)],
-                    Timestamp = DateTime.UtcNow.AddDays(-daysAgo).AddHours(-hoursAgo),
-                    Quantity = random.Next(10, 1000),
-                    UnitPrice = Math.Round(random.Next(50, 500) + (decimal)random.NextDouble(), 2),
-                    Type = tradeType
-                });
+                    var tradeType = random.Next(2) == 0 ? TradeType.Buy : TradeType.Sell;
+                    var daysAgo = random.Next(0, 30);
+                    var hoursAgo = random.Next(0, 24);
+                    
+                    trades.Add(new Trade
+                    {
+                        BrokerId = brokerIds[random.Next(brokerIds.Count)],
+                        ShareholderId = shareholderId,
+                        CompanyId = companyIds[random.Next(companyIds.Count)],
+                        Timestamp = DateTime.UtcNow.AddDays(-daysAgo).AddHours(-hoursAgo),
+                        Quantity = random.Next(10, 1000),
+                        UnitPrice = Math.Round(random.Next(50, 500) + (decimal)random.NextDouble(), 2),
+                        Type = tradeType
+                    });
+                }
             }
 
             // Sort by timestamp for logical order
@@ -406,6 +433,92 @@ namespace ShareSphere.Api.Data
             context.Trades.AddRange(trades);
             await context.SaveChangesAsync();
             Console.WriteLine($"✓ Seeded {trades.Count} trades");
+        }
+
+        public static async Task SeedPortfolios(AppDbContext context)
+        {
+            // Check if portfolios already exist
+            if (await context.Portfolios.AnyAsync())
+            {
+                Console.WriteLine("ℹ Portfolios already seeded");
+                return;
+            }
+
+            // Ensure trades exist first
+            if (!await context.Trades.AnyAsync())
+            {
+                Console.WriteLine("⚠ Trades must be seeded before portfolios");
+                return;
+            }
+
+            // Calculate holdings from trades - select only needed fields
+            var trades = await context.Trades
+                .AsNoTracking()
+                .Select(t => new { t.ShareholderId, t.CompanyId, t.Type, t.Quantity })
+                .ToListAsync();
+
+            // Group by shareholder and company to calculate net holdings per company
+            var portfolios = trades
+                .GroupBy(t => new { t.ShareholderId, t.CompanyId })
+                .Select(g => new
+                {
+                    g.Key.ShareholderId,
+                    g.Key.CompanyId,
+                    NetQuantity = g.Sum(t => t.Type == TradeType.Buy ? t.Quantity : -t.Quantity)
+                })
+                .Where(p => p.NetQuantity > 0) // Only positive holdings
+                .ToList();
+
+            if (portfolios.Count == 0)
+            {
+                Console.WriteLine("⚠ No positive holdings found from trades");
+                return;
+            }
+
+            // Get share IDs for each company - ensures each portfolio is linked to a specific company
+            var companyIds = portfolios.Select(p => p.CompanyId).Distinct().ToList();
+            var shares = await context.Shares
+                .AsNoTracking()
+                .Where(s => companyIds.Contains(s.CompanyId))
+                .Select(s => new { s.ShareId, s.CompanyId })
+                .ToDictionaryAsync(s => s.CompanyId, s => s.ShareId);
+
+            var portfolioEntries = new List<Portfolio>(portfolios.Count); // Pre-allocate capacity
+            var missingCompanies = 0;
+
+            foreach (var portfolio in portfolios)
+            {
+                // Each portfolio entry is associated with a specific company through the share
+                if (shares.TryGetValue(portfolio.CompanyId, out var shareId))
+                {
+                    portfolioEntries.Add(new Portfolio
+                    {
+                        ShareholderId = portfolio.ShareholderId,
+                        ShareId = shareId, // Links to Share, which links to Company
+                        amount = portfolio.NetQuantity
+                    });
+                }
+                else
+                {
+                    missingCompanies++;
+                }
+            }
+
+            if (missingCompanies > 0)
+            {
+                Console.WriteLine($"⚠ Warning: {missingCompanies} companies from trades have no corresponding shares");
+            }
+
+            if (portfolioEntries.Count != 0)
+            {
+                context.Portfolios.AddRange(portfolioEntries);
+                await context.SaveChangesAsync();
+                Console.WriteLine($"✓ Seeded {portfolioEntries.Count} portfolio entries");
+            }
+            else
+            {
+                Console.WriteLine("⚠ No portfolio entries to seed");
+            }
         }
         
     }
