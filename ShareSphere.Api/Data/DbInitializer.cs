@@ -109,14 +109,15 @@ namespace ShareSphere.Api.Data
             var companies = new List<Company>(40); // Pre-allocate capacity
 
             // Helper method to add companies if exchange exists
-            void AddCompaniesForExchange(string exchangeName, params (string Name, string Ticker)[] companyData)
+            void AddCompaniesForExchange(string exchangeName, params (string Name, string Ticker, string Sector)[] companyData)
             {
                 if (exchanges.TryGetValue(exchangeName, out var exchangeId))
                 {
                     companies.AddRange(companyData.Select(c => new Company 
                     { 
                         Name = c.Name, 
-                        TickerSymbol = c.Ticker, 
+                        TickerSymbol = c.Ticker,
+                        Sector = c.Sector,
                         ExchangeId = exchangeId 
                     }));
                 }
@@ -124,54 +125,54 @@ namespace ShareSphere.Api.Data
 
             // Add companies for each exchange
             AddCompaniesForExchange("New York Stock Exchange",
-                ("JPMorgan Chase & Co.", "JPM"),
-                ("Johnson & Johnson", "JNJ"),
-                ("Exxon Mobil Corporation", "XOM"),
-                ("Procter & Gamble Co.", "PG"),
-                ("Visa Inc.", "V"),
-                ("Walmart Inc.", "WMT"),
-                ("Coca-Cola Company", "KO")
+                ("JPMorgan Chase & Co.", "JPM", "Financial Services"),
+                ("Johnson & Johnson", "JNJ", "Healthcare"),
+                ("Exxon Mobil Corporation", "XOM", "Energy"),
+                ("Procter & Gamble Co.", "PG", "Consumer Goods"),
+                ("Visa Inc.", "V", "Financial Services"),
+                ("Walmart Inc.", "WMT", "Retail"),
+                ("Coca-Cola Company", "KO", "Beverages")
             );
 
             AddCompaniesForExchange("NASDAQ",
-                ("Apple Inc.", "AAPL"),
-                ("Microsoft Corporation", "MSFT"),
-                ("Amazon.com Inc.", "AMZN"),
-                ("Alphabet Inc.", "GOOGL"),
-                ("Meta Platforms Inc.", "META"),
-                ("Tesla Inc.", "TSLA"),
-                ("NVIDIA Corporation", "NVDA"),
-                ("Netflix Inc.", "NFLX"),
-                ("Adobe Inc.", "ADBE"),
-                ("Intel Corporation", "INTC")
+                ("Apple Inc.", "AAPL", "Technology"),
+                ("Microsoft Corporation", "MSFT", "Technology"),
+                ("Amazon.com Inc.", "AMZN", "E-commerce"),
+                ("Alphabet Inc.", "GOOGL", "Technology"),
+                ("Meta Platforms Inc.", "META", "Technology"),
+                ("Tesla Inc.", "TSLA", "Automotive"),
+                ("NVIDIA Corporation", "NVDA", "Technology"),
+                ("Netflix Inc.", "NFLX", "Entertainment"),
+                ("Adobe Inc.", "ADBE", "Technology"),
+                ("Intel Corporation", "INTC", "Technology")
             );
 
             AddCompaniesForExchange("London Stock Exchange",
-                ("HSBC Holdings plc", "HSBA"),
-                ("BP plc", "BP"),
-                ("Shell plc", "SHEL"),
-                ("AstraZeneca plc", "AZN"),
-                ("Unilever plc", "ULVR")
+                ("HSBC Holdings plc", "HSBA", "Financial Services"),
+                ("BP plc", "BP", "Energy"),
+                ("Shell plc", "SHEL", "Energy"),
+                ("AstraZeneca plc", "AZN", "Pharmaceuticals"),
+                ("Unilever plc", "ULVR", "Consumer Goods")
             );
 
             AddCompaniesForExchange("Tokyo Stock Exchange",
-                ("Toyota Motor Corporation", "TM"),
-                ("Sony Group Corporation", "SONY"),
-                ("SoftBank Group Corp.", "SFTBY"),
-                ("Nintendo Co., Ltd.", "NTDOY")
+                ("Toyota Motor Corporation", "TM", "Automotive"),
+                ("Sony Group Corporation", "SONY", "Technology"),
+                ("SoftBank Group Corp.", "SFTBY", "Telecommunications"),
+                ("Nintendo Co., Ltd.", "NTDOY", "Entertainment")
             );
 
             AddCompaniesForExchange("Hong Kong Stock Exchange",
-                ("Tencent Holdings Limited", "TCEHY"),
-                ("Alibaba Group Holding Limited", "BABA"),
-                ("China Mobile Limited", "CHL")
+                ("Tencent Holdings Limited", "TCEHY", "Technology"),
+                ("Alibaba Group Holding Limited", "BABA", "E-commerce"),
+                ("China Mobile Limited", "CHL", "Telecommunications")
             );
 
             AddCompaniesForExchange("Euronext",
-                ("LVMH Moët Hennessy Louis Vuitton", "LVMH"),
-                ("TotalEnergies SE", "TTE"),
-                ("Airbus SE", "AIR"),
-                ("SAP SE", "SAP")
+                ("LVMH Moët Hennessy Louis Vuitton", "LVMH", "Luxury Goods"),
+                ("TotalEnergies SE", "TTE", "Energy"),
+                ("Airbus SE", "AIR", "Aerospace"),
+                ("SAP SE", "SAP", "Technology")
             );
 
             if (companies.Count != 0)
