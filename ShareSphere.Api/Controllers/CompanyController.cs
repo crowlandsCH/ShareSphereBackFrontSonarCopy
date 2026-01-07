@@ -23,6 +23,7 @@ namespace ShareSphere.Api.Controllers
             [Required, StringLength(10, MinimumLength = 1)]
             [RegularExpression(@"^[A-Z]+$", ErrorMessage = "Ticker symbol must contain only uppercase letters")]
             string TickerSymbol,
+            [Required, MaxLength(100)] string Sector,
             [Required] int ExchangeId
         );
 
@@ -30,6 +31,7 @@ namespace ShareSphere.Api.Controllers
     int CompanyId,
     string Name,
     string TickerSymbol,
+    string Sector,
     int ExchangeId,
     StockExchangeSimpleResponse?  StockExchange
 );
@@ -43,7 +45,7 @@ public record StockExchangeSimpleResponse(
 
 
         /// <summary>
-        /// Gibt alle Companies zurück
+        /// Returns all companies
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -53,7 +55,7 @@ public record StockExchangeSimpleResponse(
         }
 
         /// <summary>
-        /// Gibt eine spezifische Company nach ID zurück
+        /// Returns a specific company by ID
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -66,7 +68,7 @@ public record StockExchangeSimpleResponse(
         }
 
         /// <summary>
-        /// Erstellt eine neue Company (nur für Admins)
+        /// Creates a new company (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpPost]
@@ -76,6 +78,7 @@ public record StockExchangeSimpleResponse(
             {
                 Name = request.Name,
                 TickerSymbol = request.TickerSymbol,
+                Sector = request.Sector,
                 ExchangeId = request.ExchangeId
             };
 
@@ -84,7 +87,7 @@ public record StockExchangeSimpleResponse(
         }
 
         /// <summary>
-        /// Aktualisiert eine bestehende Company (nur für Admins)
+        /// Updates an existing company (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpPut("{id}")]
@@ -94,6 +97,7 @@ public record StockExchangeSimpleResponse(
             {
                 Name = request.Name,
                 TickerSymbol = request. TickerSymbol,
+                Sector = request.Sector,
                 ExchangeId = request.ExchangeId
             };
 
@@ -105,7 +109,7 @@ public record StockExchangeSimpleResponse(
         }
 
         /// <summary>
-        /// Löscht eine Company (nur für Admins)
+        /// Deletes a company (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]

@@ -15,22 +15,22 @@ namespace ShareSphere.Api.Services
 
         public async Task<PurchaseResult> PurchaseSharesAsync(int shareholderId, int shareId, int quantity, int brokerId)
         {
-            // Validierung:  Quantity muss positiv sein
+            // Validation: Quantity must be positive
             if (quantity <= 0)
             {
                 return new PurchaseResult
                 {
                     Success = false,
-                    Message = "Die Menge muss größer als 0 sein."
+                    Message = "The quantity must be greater than 0."
                 };
             }
 
-            // Verwende eine Transaktion für atomare Operationen
+            // Use a transaction for atomic operations
             using var transaction = await _context.Database.BeginTransactionAsync();
             
             try
             {
-                // 1. Prüfe ob Shareholder existiert
+                // 1. Check if shareholder exists
                 var shareholder = await _context.Shareholders
                     .Include(s => s. Portfolios)
                     .FirstOrDefaultAsync(s => s.ShareholderId == shareholderId);
@@ -40,11 +40,11 @@ namespace ShareSphere.Api.Services
                     return new PurchaseResult
                     {
                         Success = false,
-                        Message = $"Shareholder mit ID {shareholderId} wurde nicht gefunden."
+                        Message = $"Shareholder with ID {shareholderId} was not found."
                     };
                 }
 
-                // 2. Prüfe ob Share existiert und lade mit Company-Daten
+                // 2. Check if share exists and load with company data
                 var share = await _context.Shares
                     .Include(s => s.Company)
                     .FirstOrDefaultAsync(s => s.ShareId == shareId);
@@ -54,48 +54,48 @@ namespace ShareSphere.Api.Services
                     return new PurchaseResult
                     {
                         Success = false,
-                        Message = $"Share mit ID {shareId} wurde nicht gefunden."
+                        Message = $"Share with ID {shareId} was not found."
                     };
                 }
 
-                // 3. Prüfe ob Broker existiert
+                // 3. Check if broker exists
                 var broker = await _context.Brokers. FindAsync(brokerId);
                 if (broker == null)
                 {
                     return new PurchaseResult
                     {
                         Success = false,
-                        Message = $"Broker mit ID {brokerId} wurde nicht gefunden."
+                        Message = $"Broker with ID {brokerId} was not found."
                     };
                 }
 
-                // 4. Prüfe Verfügbarkeit
+                // 4. Check availability
                 if (share.AvailableQuantity < quantity)
                 {
                     return new PurchaseResult
                     {
                         Success = false,
-                        Message = $"Nicht genügend Shares verfügbar.  Verfügbar: {share.AvailableQuantity}, Angefordert: {quantity}."
+                        Message = $"Not enough shares available. Available: {share.AvailableQuantity}, Requested: {quantity}."
                     };
                 }
 
-                // 5. Reduziere verfügbare Shares
+                // 5. Reduce available shares
                 share. AvailableQuantity -= quantity;
 
-                // 6. Aktualisiere oder erstelle Portfolio
+                // 6. Update or create portfolio
                 var existingPortfolio = shareholder. Portfolios
                     .FirstOrDefault(p => p.ShareId == shareId);
 
                 Portfolio portfolio;
                 if (existingPortfolio != null)
                 {
-                    // Portfolio existiert bereits - erhöhe die Menge
+                    // Portfolio already exists - increase quantity
                     existingPortfolio.amount += quantity;
                     portfolio = existingPortfolio;
                 }
                 else
                 {
-                    // Erstelle neues Portfolio
+                    // Create new portfolio
                     portfolio = new Portfolio
                     {
                         ShareholderId = shareholderId,
@@ -106,7 +106,7 @@ namespace ShareSphere.Api.Services
                     shareholder.Portfolios.Add(portfolio);
                 }
 
-                // 7. Erstelle Trade-Eintrag
+                // 7. Create trade entry
                 var trade = new Trade
                 {
                     BrokerId = brokerId,
@@ -119,14 +119,14 @@ namespace ShareSphere.Api.Services
                 };
                 _context.Trades.Add(trade);
 
-                // 8. Aktualisiere Portfolio-Wert des Shareholders
+                // 8. Update portfolio value of shareholder
                 shareholder. PortfolioValue += quantity * share.Price;
 
-                // 9. Speichere alle Änderungen
+                // 9. Save all changes
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // 10. Lade vollständige Daten für Rückgabe
+                // 10. Load complete data for return
                 await _context.Entry(portfolio)
                     .Reference(p => p.Share)
                     .LoadAsync();
@@ -141,7 +141,7 @@ namespace ShareSphere.Api.Services
                 return new PurchaseResult
                 {
                     Success = true,
-                    Message = $"Erfolgreich {quantity} Share(s) von {share.Company?. Name ??  "Unbekannt"} gekauft.",
+                    Message = $"Successfully bought {quantity} share(s) of {share.Company?. Name ??  "Unknown"}.",
                     Trade = trade,
                     Portfolio = portfolio
                 };
@@ -152,29 +152,29 @@ namespace ShareSphere.Api.Services
                 return new PurchaseResult
                 {
                     Success = false,
-                    Message = $"Ein Fehler ist aufgetreten: {ex.Message}"
+                    Message = $"An error occurred: {ex.Message}"
                 };
             }
         }
 
     public async Task<PurchaseResult> SellSharesAsync(int shareholderId, int shareId, int quantity, int brokerId)
 {
-    // Validierung:  Quantity muss positiv sein
+    // Validation: Quantity must be positive
     if (quantity <= 0)
     {
         return new PurchaseResult
         {
             Success = false,
-            Message = "Die Menge muss größer als 0 sein."
+            Message = "The quantity must be greater than 0."
         };
     }
 
-    // Verwende eine Transaktion für atomare Operationen
+    // Use a transaction for atomic operations
     using var transaction = await _context. Database.BeginTransactionAsync();
     
     try
     {
-        // 1. Prüfe ob Shareholder existiert
+        // 1. Check if shareholder exists
         var shareholder = await _context.Shareholders
             .Include(s => s. Portfolios)
             .FirstOrDefaultAsync(s => s. ShareholderId == shareholderId);
@@ -184,11 +184,11 @@ namespace ShareSphere.Api.Services
             return new PurchaseResult
             {
                 Success = false,
-                Message = $"Shareholder mit ID {shareholderId} wurde nicht gefunden."
+                Message = $"Shareholder with ID {shareholderId} was not found."
             };
         }
 
-        // 2. Prüfe ob Share existiert und lade mit Company-Daten
+        // 2. Check if share exists and load with company data
         var share = await _context.Shares
             .Include(s => s.Company)
             .FirstOrDefaultAsync(s => s.ShareId == shareId);
@@ -198,22 +198,22 @@ namespace ShareSphere.Api.Services
             return new PurchaseResult
             {
                 Success = false,
-                Message = $"Share mit ID {shareId} wurde nicht gefunden."
+                Message = $"Share with ID {shareId} was not found."
             };
         }
 
-        // 3. Prüfe ob Broker existiert
+        // 3. Check if broker exists
         var broker = await _context.Brokers. FindAsync(brokerId);
         if (broker == null)
         {
             return new PurchaseResult
             {
                 Success = false,
-                Message = $"Broker mit ID {brokerId} wurde nicht gefunden."
+                Message = $"Broker with ID {brokerId} was not found."
             };
         }
 
-        // 4. Prüfe ob Portfolio existiert
+        // 4. Check if portfolio exists
         var existingPortfolio = shareholder.Portfolios
             .FirstOrDefault(p => p.ShareId == shareId);
 
@@ -222,39 +222,39 @@ namespace ShareSphere.Api.Services
             return new PurchaseResult
             {
                 Success = false,
-                Message = $"Shareholder besitzt keine Shares von diesem Unternehmen."
+                Message = $"Shareholder does not own any shares of this company."
             };
         }
 
-        // 5. Prüfe ob genügend Shares im Portfolio vorhanden sind
+        // 5. Check if enough shares are available in portfolio
         if (existingPortfolio.amount < quantity)
         {
             return new PurchaseResult
             {
                 Success = false,
-                Message = $"Nicht genügend Shares im Portfolio.  Verfügbar: {existingPortfolio.amount}, Angefordert: {quantity}."
+                Message = $"Not enough shares in portfolio. Available: {existingPortfolio.amount}, Requested: {quantity}."
             };
         }
 
-        // 6. Reduziere Shares im Portfolio oder lösche Portfolio komplett
+        // 6. Reduce shares in portfolio or delete portfolio completely
         Portfolio?  portfolio = null;
         if (existingPortfolio.amount == quantity)
         {
-            // Exakt alle Shares verkaufen - Portfolio löschen
+            // Sell exactly all shares - delete portfolio
             _context.Portfolios.Remove(existingPortfolio);
             shareholder.Portfolios.Remove(existingPortfolio);
         }
         else
         {
-            // Nur einen Teil verkaufen - Menge reduzieren
+            // Only sell a part - reduce quantity
             existingPortfolio.amount -= quantity;
             portfolio = existingPortfolio;
         }
 
-        // 7. Erhöhe verfügbare Shares der Firma
+        // 7. Increase available shares of the company
         share.AvailableQuantity += quantity;
 
-        // 8. Erstelle Trade-Eintrag für Verkauf
+        // 8. Create trade entry for sale
         var trade = new Trade
         {
             BrokerId = brokerId,
@@ -267,14 +267,14 @@ namespace ShareSphere.Api.Services
         };
         _context.Trades.Add(trade);
 
-        // 9. Reduziere Portfolio-Wert des Shareholders
+        // 9. Reduce portfolio value of shareholder
         shareholder. PortfolioValue -= quantity * share. Price;
 
-        // 10. Speichere alle Änderungen
+        // 10. Save all changes
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
 
-        // 11. Lade vollständige Daten für Rückgabe
+        // 11. Load complete data for return
         if (portfolio != null)
         {
             await _context.Entry(portfolio)
@@ -292,7 +292,7 @@ namespace ShareSphere.Api.Services
         return new PurchaseResult
         {
             Success = true,
-            Message = $"Erfolgreich {quantity} Share(s) von {share.Company?. Name ??  "Unbekannt"} verkauft.",
+            Message = $"Successfully sold {quantity} share(s) of {share.Company?. Name ??  "Unknown"}.",
             Trade = trade,
             Portfolio = portfolio
         };
@@ -303,7 +303,7 @@ namespace ShareSphere.Api.Services
         return new PurchaseResult
         {
             Success = false,
-            Message = $"Ein Fehler ist aufgetreten: {ex.Message}"
+            Message = $"An error occurred: {ex.Message}"
         };
     }
 }

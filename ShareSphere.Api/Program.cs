@@ -13,11 +13,11 @@ using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---- 0) CORS: erlaubte Origins aus Konfiguration, Fallback für lokale Dev-Server ----
+// ---- 0) CORS: allowed origins from configuration, fallback for local dev servers ----
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? new[] { "http://localhost:5173", "http://localhost:3000" };
 
-// ---- 1) Datenbank ----
+// ---- 1) Database ----
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
@@ -53,8 +53,8 @@ builder.Services
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-    RoleClaimType = ClaimTypes.Role,  // <-- ÄNDERE VON "role" ZU ClaimTypes.Role
-    NameClaimType = ClaimTypes.Name,  // <-- ÄNDERE VON "unique_name" ZU ClaimTypes.Name
+    RoleClaimType = ClaimTypes.Role,  // <-- CHANGE FROM "role" TO ClaimTypes.Role
+    NameClaimType = ClaimTypes.Name,  // <-- CHANGE FROM "unique_name" TO ClaimTypes.Name
             ClockSkew = TimeSpan.Zero
         };
     });
@@ -68,7 +68,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler. IgnoreCycles;
     });
 
-// ---- 5) Swagger mit JWT ----
+// ---- 5) Swagger with JWT ----
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opt =>
 {
@@ -76,14 +76,14 @@ builder.Services.AddSwaggerGen(opt =>
     {
         Title = "ShareSphere API",
         Version = "v1",
-        Description = "WebAPI mit Identity + JWT"
+        Description = "WebAPI with Identity + JWT"
     });
 
     // Bearer-JWT Schema
     var securitySchema = new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Description = "JWT im Format: Bearer {token}",
+        Description = "JWT in format: Bearer {token}",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
@@ -104,7 +104,7 @@ builder.Services.AddSwaggerGen(opt =>
     opt.AddSecurityRequirement(securityRequirement);
 });
 
-// ---- 6) CORS-Policy für React-Frontend ----
+// ---- 6) CORS policy for React frontend ----
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ClientCors", policy =>
@@ -112,11 +112,11 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod();
-        // .AllowCredentials(); // nur nötig, wenn du Cookies (z. B. für Auth) nutzt
+        // .AllowCredentials(); // only needed if you use cookies (e.g. for Auth)
     });
 });
 
-// ---- 7) Service registrieren ----
+// ---- 7) Register services ----
 builder.Services.AddScoped<ShareSphere.Api.Services.IAuthService, ShareSphere.Api.Services.AuthService>();
 builder.Services.AddScoped<IStockExchangeService, StockExchangeService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
@@ -127,8 +127,8 @@ builder.Services.AddScoped<ITradeService, TradeService>();
 builder.Services.AddScoped<ISharePurchaseService, SharePurchaseService>();
 var app = builder.Build();
 
-Console.WriteLine($"API läuft auf: {string.Join(", ", app.Urls)}");
-// ---- 8) Rollen seeden ----
+Console.WriteLine($"API is running on: {string.Join(", ", app.Urls)}");
+// ---- 8) Seed roles ----
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -140,6 +140,13 @@ using (var scope = app.Services.CreateScope())
         
         await DbInitializer.SeedAdminUser(userManager, roleManager);
         await DbInitializer.SeedStockExchanges(dbContext);
+        await DbInitializer.SeedCompanies(dbContext);
+        await DbInitializer.SeedShares(dbContext);
+        await DbInitializer.SeedShareholders(dbContext);
+        await DbInitializer.SeedBrokers(dbContext);
+        await DbInitializer.SeedTrades(dbContext);
+        await DbInitializer.SeedApplicationUsers(dbContext, userManager);
+
     }
     catch (Exception ex)
     {
@@ -151,9 +158,9 @@ using (var scope = app.Services.CreateScope())
 
 
 
-// ---- 9) Middleware-Reihenfolge ----
+// ---- 9) Middleware order ----
 
-// Bei Betrieb hinter Proxy (z. B. später in Azure/AppService) korrekte Weiterleitungen
+// When operating behind a proxy (e.g. later in Azure/AppService) correct redirects
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
@@ -167,16 +174,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// **Wichtig**: CORS vor Auth/Authorization, damit Preflight-Requests sauber durchgehen
+// **Important**: CORS before Auth/Authorization, so that preflight requests go through cleanly
 app.UseCors("ClientCors");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// API-Endpunkte
+// API endpoints
 app.MapControllers();
 
-// Optional: SPA-Hosting für Produktion (wenn du das React-Build nach wwwroot kopierst)
+// Optional: SPA hosting for production (if you copy the React build to wwwroot)
 if (!app.Environment.IsDevelopment())
 {
     app.UseDefaultFiles();
@@ -184,4 +191,4 @@ if (!app.Environment.IsDevelopment())
     app.MapFallbackToFile("index.html");
 }
 
-app.Run();
+await app.RunAsync();

@@ -56,7 +56,7 @@ namespace ShareSphere.Api.Services
             _context.Trades.Add(trade);
             await _context.SaveChangesAsync();
 
-            // Lade die Navigation Properties nach dem Speichern
+            // Load navigation properties after saving
             await _context.Entry(trade)
                 .Reference(t => t.Company)
                 .LoadAsync();
@@ -106,7 +106,7 @@ namespace ShareSphere.Api.Services
 public async Task<IEnumerable<Trade>> GetByShareholderIdAsync(int shareholderId)
 {
     return await _context. Trades
-        .AsNoTracking() // Wichtig für Performance
+        .AsNoTracking() // Important for performance
         .Where(t => t.ShareholderId == shareholderId)
         .Include(t => t.Company)
         .Include(t => t.Broker)

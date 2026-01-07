@@ -22,7 +22,7 @@ namespace ShareSphere.Api.Tests.Services
 
         private async Task<(Shareholder shareholder, Share share, Broker broker)> SetupTestDataAsync(AppDbContext context)
         {
-            // Erstelle StockExchange
+            // Create StockExchange
             var stockExchange = new StockExchange
             {
                 Name = "NYSE",
@@ -30,7 +30,7 @@ namespace ShareSphere.Api.Tests.Services
             };
             context.StockExchanges.Add(stockExchange);
 
-            // Erstelle Company
+            // Create Company
             var company = new Company
             {
                 Name = "Test Company",
@@ -39,7 +39,7 @@ namespace ShareSphere.Api.Tests.Services
             };
             context.Companies.Add(company);
 
-            // Erstelle Shareholder
+            // Create Shareholder
             var shareholder = new Shareholder
             {
                 Name = "Max Mustermann",
@@ -48,7 +48,7 @@ namespace ShareSphere.Api.Tests.Services
             };
             context.Shareholders.Add(shareholder);
 
-            // Erstelle Share
+            // Create Share
             var share = new Share
             {
                 Company = company,
@@ -57,7 +57,7 @@ namespace ShareSphere.Api.Tests.Services
             };
             context.Shares.Add(share);
 
-            // Erstelle Broker
+            // Create Broker
             var broker = new Broker
             {
                 Name = "Test Broker",
@@ -81,10 +81,10 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Erst kaufen
+            // First buy
             await service.PurchaseSharesAsync(shareholder.ShareholderId, share. ShareId, 20, broker. BrokerId);
 
-            // Lade aktualisierte Daten nach dem Kauf
+            // Load updated data after purchase
             var updatedShare = await context.Shares.AsNoTracking().FirstOrDefaultAsync(s => s.ShareId == share.ShareId);
             int availableAfterPurchase = updatedShare! .AvailableQuantity;
 
@@ -104,7 +104,7 @@ namespace ShareSphere.Api.Tests.Services
             Assert.Equal(TradeType. Sell, result.Trade.Type);
             Assert.Equal(sellQuantity, result.Trade. Quantity);
 
-            // Überprüfe, dass AvailableQuantity erhöht wurde
+            // Verify that AvailableQuantity was increased
             var finalShare = await context.Shares. FindAsync(share.ShareId);
             Assert.Equal(availableAfterPurchase + sellQuantity, finalShare!.AvailableQuantity);
         }
@@ -117,10 +117,10 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Erst 20 Shares kaufen
+            // First buy 20 shares
             await service.PurchaseSharesAsync(shareholder.ShareholderId, share.ShareId, 20, broker.BrokerId);
 
-            // Act - Nur 10 verkaufen
+            // Act - Only sell 10
             var result = await service.SellSharesAsync(
                 shareholder.ShareholderId,
                 share.ShareId,
@@ -133,7 +133,7 @@ namespace ShareSphere.Api.Tests.Services
             Assert.NotNull(result.Portfolio);
             Assert.Equal(10, result.Portfolio.amount); // 20 - 10 = 10 übrig
 
-            // Überprüfe Portfolio in DB
+            // Verify portfolio in DB
             var portfolio = await context.Portfolios
                 .FirstOrDefaultAsync(p => p. ShareholderId == shareholder. ShareholderId && p.ShareId == share.ShareId);
             Assert.NotNull(portfolio);
@@ -148,10 +148,10 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Erst 15 Shares kaufen
+            // First buy 15 shares
             await service.PurchaseSharesAsync(shareholder.ShareholderId, share.ShareId, 15, broker.BrokerId);
 
-            // Act - Alle 15 verkaufen
+            // Act - Sell all 15
             var result = await service.SellSharesAsync(
                 shareholder.ShareholderId,
                 share.ShareId,
@@ -161,9 +161,9 @@ namespace ShareSphere.Api.Tests.Services
 
             // Assert
             Assert.True(result.Success);
-            Assert. Null(result.Portfolio); // Portfolio wurde gelöscht
+            Assert. Null(result.Portfolio); // Portfolio was deleted
 
-            // Überprüfe dass Portfolio nicht mehr existiert
+            // Verify that portfolio no longer exists
             var portfolioExists = await context. Portfolios
                 .AnyAsync(p => p.ShareholderId == shareholder.ShareholderId && p.ShareId == share.ShareId);
             Assert. False(portfolioExists);
@@ -177,10 +177,10 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Erst 10 Shares kaufen
+            // First buy 10 shares
             await service.PurchaseSharesAsync(shareholder.ShareholderId, share.ShareId, 10, broker.BrokerId);
 
-            // Act - Versuche 15 zu verkaufen (mehr als vorhanden)
+            // Act - Try to sell 15 (more than available)
             var result = await service.SellSharesAsync(
                 shareholder.ShareholderId,
                 share.ShareId,
@@ -190,7 +190,7 @@ namespace ShareSphere.Api.Tests.Services
 
             // Assert
             Assert. False(result.Success);
-            Assert.Contains("Nicht genügend Shares im Portfolio", result.Message);
+            Assert.Contains("Not enough shares in portfolio", result.Message);
             Assert.Null(result.Trade);
         }
 
@@ -202,7 +202,7 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Act - Versuche zu verkaufen ohne vorher gekauft zu haben
+            // Act - Try to sell without having bought before
             var result = await service.SellSharesAsync(
                 shareholder.ShareholderId,
                 share. ShareId,
@@ -212,7 +212,7 @@ namespace ShareSphere.Api.Tests.Services
 
             // Assert
             Assert.False(result.Success);
-            Assert.Contains("besitzt keine Shares", result.Message);
+            Assert.Contains("does not own any shares", result.Message);
             Assert.Null(result. Trade);
         }
 
@@ -234,7 +234,7 @@ namespace ShareSphere.Api.Tests.Services
 
             // Assert
             Assert.False(result.Success);
-            Assert.Contains("größer als 0", result.Message);
+            Assert.Contains("greater than 0", result.Message);
         }
 
         [Fact]
@@ -255,7 +255,7 @@ namespace ShareSphere.Api.Tests.Services
 
             // Assert
             Assert.False(result.Success);
-            Assert.Contains("größer als 0", result.Message);
+            Assert.Contains("greater than 0", result.Message);
         }
 
         [Fact]
@@ -266,13 +266,13 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Erst 20 Shares kaufen
+            // First buy 20 shares
             await service.PurchaseSharesAsync(shareholder.ShareholderId, share.ShareId, 20, broker.BrokerId);
 
             var beforeShareholder = await context.Shareholders. AsNoTracking().FirstOrDefaultAsync(s => s.ShareholderId == shareholder.ShareholderId);
             decimal portfolioValueBeforeSell = beforeShareholder!. PortfolioValue;
 
-            // Act - 10 verkaufen
+            // Act - Sell 10
             var result = await service.SellSharesAsync(
                 shareholder. ShareholderId,
                 share.ShareId,
@@ -295,13 +295,13 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Erst 20 Shares kaufen (reduziert AvailableQuantity)
+            // First buy 20 shares (reduces AvailableQuantity)
             await service.PurchaseSharesAsync(shareholder.ShareholderId, share.ShareId, 20, broker.BrokerId);
 
             var shareBeforeSell = await context.Shares.AsNoTracking().FirstOrDefaultAsync(s => s.ShareId == share.ShareId);
             int availableBeforeSell = shareBeforeSell! .AvailableQuantity;
 
-            // Act - 10 verkaufen
+            // Act - Sell 10
             var result = await service.SellSharesAsync(
                 shareholder.ShareholderId,
                 share.ShareId,
@@ -324,10 +324,10 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Erst kaufen
+            // First buy
             await service.PurchaseSharesAsync(shareholder. ShareholderId, share.ShareId, 20, broker.BrokerId);
 
-            // Act - Verkaufen
+            // Act - Sell
             var result = await service.SellSharesAsync(
                 shareholder.ShareholderId,
                 share.ShareId,
@@ -345,7 +345,7 @@ namespace ShareSphere.Api.Tests.Services
             Assert.Equal(10, result. Trade.Quantity);
             Assert.Equal(share.Price, result.Trade.UnitPrice);
 
-            // Überprüfe dass Trade in DB gespeichert wurde
+            // Verify that trade was saved in DB
             var trade = await context. Trades. FindAsync(result.Trade.TradeId);
             Assert.NotNull(trade);
             Assert.Equal(TradeType.Sell, trade. Type);
@@ -361,7 +361,7 @@ namespace ShareSphere.Api.Tests.Services
 
             // Act
             var result = await service.SellSharesAsync(
-                999, // Nicht existierende Shareholder-ID
+                999, // Non-existing shareholder ID
                 share.ShareId,
                 10,
                 broker. BrokerId
@@ -370,7 +370,7 @@ namespace ShareSphere.Api.Tests.Services
             // Assert
             Assert.False(result.Success);
             Assert. Contains("Shareholder", result.Message);
-            Assert. Contains("nicht gefunden", result.Message);
+            Assert. Contains("not found", result.Message);
         }
 
         [Fact]
@@ -384,7 +384,7 @@ namespace ShareSphere.Api.Tests.Services
             // Act
             var result = await service. SellSharesAsync(
                 shareholder.ShareholderId,
-                999, // Nicht existierende Share-ID
+                999, // Non-existing share ID
                 10,
                 broker.BrokerId
             );
@@ -392,7 +392,7 @@ namespace ShareSphere.Api.Tests.Services
             // Assert
             Assert.False(result.Success);
             Assert.Contains("Share", result.Message);
-            Assert.Contains("nicht gefunden", result.Message);
+            Assert.Contains("not found", result.Message);
         }
 
         [Fact]
@@ -403,21 +403,21 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Erst kaufen mit gültigem Broker
+            // First buy with valid broker
             await service.PurchaseSharesAsync(shareholder.ShareholderId, share.ShareId, 20, broker.BrokerId);
 
-            // Act - Verkaufen mit ungültigem Broker
+            // Act - Sell with invalid broker
             var result = await service.SellSharesAsync(
                 shareholder.ShareholderId,
                 share.ShareId,
                 10,
-                999 // Nicht existierender Broker
+                999 // Non-existing broker
             );
 
             // Assert
             Assert.False(result.Success);
             Assert.Contains("Broker", result.Message);
-            Assert.Contains("nicht gefunden", result.Message);
+            Assert.Contains("not found", result.Message);
         }
 
         [Fact]
@@ -428,10 +428,10 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Erst 30 Shares kaufen
+            // First buy 30 shares
             await service.PurchaseSharesAsync(shareholder.ShareholderId, share.ShareId, 30, broker.BrokerId);
 
-            // Act - Drei aufeinanderfolgende Verkäufe
+            // Act - Three consecutive sales
             var result1 = await service.SellSharesAsync(shareholder.ShareholderId, share.ShareId, 5, broker.BrokerId);
             var result2 = await service.SellSharesAsync(shareholder.ShareholderId, share.ShareId, 10, broker.BrokerId);
             var result3 = await service.SellSharesAsync(shareholder.ShareholderId, share.ShareId, 8, broker.BrokerId);
@@ -455,7 +455,7 @@ namespace ShareSphere.Api.Tests.Services
             var service = new SharePurchaseService(context);
             var (shareholder, share, broker) = await SetupTestDataAsync(context);
 
-            // Erst kaufen
+            // First buy
             await service.PurchaseSharesAsync(shareholder.ShareholderId, share.ShareId, 20, broker.BrokerId);
 
             var portfolioBefore = await context.Portfolios
@@ -466,18 +466,18 @@ namespace ShareSphere.Api.Tests.Services
             var shareBefore = await context.Shares.AsNoTracking().FirstOrDefaultAsync(s => s.ShareId == share.ShareId);
             int availableBefore = shareBefore!. AvailableQuantity;
 
-            // Act - Versuche mit nicht existierendem Broker zu verkaufen
+            // Act - Try to sell with non-existing broker
             var result = await service.SellSharesAsync(
                 shareholder.ShareholderId,
                 share.ShareId,
                 10,
-                999 // Nicht existierender Broker
+                999 // Non-existing broker
             );
 
             // Assert
             Assert.False(result.Success);
 
-            // Überprüfe dass keine Änderungen vorgenommen wurden (Rollback erfolgreich)
+            // Verify that no changes were made (rollback successful)
             var portfolioAfter = await context.Portfolios
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ShareholderId == shareholder.ShareholderId && p.ShareId == share. ShareId);
@@ -498,7 +498,7 @@ namespace ShareSphere.Api.Tests.Services
             int initialAvailable = share.AvailableQuantity;
             decimal initialPortfolioValue = shareholder.PortfolioValue;
 
-            // Act - Kaufen und wieder verkaufen
+            // Act - Buy and sell again
             await service.PurchaseSharesAsync(shareholder.ShareholderId, share.ShareId, 20, broker.BrokerId);
             await service.SellSharesAsync(shareholder.ShareholderId, share.ShareId, 20, broker.BrokerId);
 
@@ -509,7 +509,7 @@ namespace ShareSphere.Api.Tests.Services
             Assert.Equal(initialAvailable, finalShare! .AvailableQuantity);
             Assert.Equal(initialPortfolioValue, finalShareholder!.PortfolioValue);
 
-            // Portfolio sollte nicht mehr existieren
+            // Portfolio should no longer exist
             var portfolioExists = await context.Portfolios
                 .AnyAsync(p => p.ShareholderId == shareholder.ShareholderId && p.ShareId == share.ShareId);
             Assert.False(portfolioExists);
@@ -517,6 +517,6 @@ namespace ShareSphere.Api.Tests.Services
 
         #endregion
 
-        // Existing Purchase Tests würden hier weiter folgen...
+        // Existing purchase tests would continue here...
     }
 }

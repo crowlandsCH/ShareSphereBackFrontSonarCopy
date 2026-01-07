@@ -15,7 +15,7 @@ namespace ShareSphere.Api.Controllers
         private readonly ISharePurchaseService _purchaseService;
         private readonly ITradeService _tradeService;
 
-// Constructor erweitern:
+// Extend constructor:
 public ShareholderController(
     IShareholderService shareholderService,
     ISharePurchaseService purchaseService,
@@ -35,7 +35,7 @@ public ShareholderController(
         );
 
         /// <summary>
-        /// Gibt alle Shareholders zurück
+        /// Returns all shareholders
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -45,7 +45,7 @@ public ShareholderController(
         }
 
         /// <summary>
-        /// Gibt einen spezifischen Shareholder nach ID zurück
+        /// Returns a specific shareholder by ID
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -58,7 +58,7 @@ public ShareholderController(
         }
 
         /// <summary>
-        /// Gibt einen Shareholder nach E-Mail-Adresse zurück
+        /// Returns a shareholder by email address
         /// </summary>
         [HttpGet("email/{email}")]
         public async Task<IActionResult> GetByEmail(string email)
@@ -71,7 +71,7 @@ public ShareholderController(
         }
 
         /// <summary>
-        /// Erstellt einen neuen Shareholder (für Admins und Users)
+        /// Creates a new shareholder (for admins and users)
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPost]
@@ -89,7 +89,7 @@ public ShareholderController(
         }
 
         /// <summary>
-        /// Aktualisiert einen bestehenden Shareholder (für Admins und Users)
+        /// Updates an existing shareholder (for admins and users)
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPut("{id}")]
@@ -110,7 +110,7 @@ public ShareholderController(
         }
 
         /// <summary>
-        /// Löscht einen Shareholder (nur für Admins)
+        /// Deletes a shareholder (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]
@@ -124,7 +124,7 @@ public ShareholderController(
         }
 
       
-// DTO für Share-Kauf
+// DTO for share purchase
 public record PurchaseShareRequest(
     [Required] int ShareId,
     [Required, Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")] int Quantity,
@@ -132,7 +132,7 @@ public record PurchaseShareRequest(
 );
 
 /// <summary>
-/// Kauft Shares für einen spezifischen Shareholder
+/// Purchases shares for a specific shareholder
 /// </summary>
 [Authorize(Roles = "admin,user")]
 [HttpPost("{shareholderId}/purchase")]
@@ -169,7 +169,7 @@ public async Task<IActionResult> PurchaseShares(
         );
 
         /// <summary>
-        /// Verkauft Shares eines Shareholders
+        /// Sells shares of a shareholder
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPost("{id}/sell-shares")]
@@ -198,14 +198,14 @@ public async Task<IActionResult> PurchaseShares(
 
         
         /// <summary>
-        /// Gibt das komplette Portfolio eines Shareholders zurück mit: 
+        /// Returns the complete portfolio of a shareholder with: 
         /// - List of shares owned
         /// - Quantity per share
         /// - Current price per share
         /// - Total portfolio value
         /// </summary>
         /// <param name="id">Shareholder ID</param>
-        /// <returns>Portfolio-Details</returns>
+        /// <returns>Portfolio details</returns>
         [HttpGet("{id}/portfolio")]
         [ProducesResponseType(typeof(ShareholderPortfolioDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -222,7 +222,7 @@ public async Task<IActionResult> PurchaseShares(
 
 
 /// <summary>
-/// Gibt alle Trades für einen spezifischen Shareholder zurück
+/// Returns all trades for a specific shareholder
 /// Returns:  All trades involving this shareholder including:  
 /// - Trade type (Buy/Sell)
 /// - Quantity
@@ -235,14 +235,14 @@ public async Task<IActionResult> PurchaseShares(
 [ProducesResponseType(StatusCodes.Status404NotFound)]
 public async Task<IActionResult> GetTrades(int id)
 {
-    // Prüfe ob Shareholder existiert
+    // Check if shareholder exists
     var shareholder = await _shareholderService.GetByIdAsync(id);
     if (shareholder == null)
         return NotFound(new { message = $"Shareholder with ID {id} not found." });
 
     var trades = await _tradeService. GetByShareholderIdAsync(id);
     
-    // Mappe zu DTO um zirkuläre Referenzen zu vermeiden
+    // Map to DTO to avoid circular references
     var tradeDtos = trades.Select(t => new TradeDto
     {
         TradeId = t. TradeId,

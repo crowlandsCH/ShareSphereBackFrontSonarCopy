@@ -43,7 +43,7 @@ namespace ShareSphere.Api.Services
             _context.Shares.Add(share);
             await _context.SaveChangesAsync();
 
-            // Lade die Company und StockExchange Navigation Properties nach dem Speichern
+            // Load the Company and StockExchange navigation properties after saving
             await _context.Entry(share)
                 .Reference(s => s.Company)
                 .LoadAsync();
@@ -72,7 +72,7 @@ namespace ShareSphere.Api.Services
 
             await _context.SaveChangesAsync();
 
-            // Wenn Preis geändert wurde, aktualisiere alle betroffenen Portfolios
+            // If price changed, update all affected portfolios
             if (priceChanged)
             {
                 await RecalculateAffectedPortfoliosAsync(shareId);
@@ -82,11 +82,11 @@ namespace ShareSphere.Api.Services
         }
 
                /// <summary>
-        /// Berechnet PortfolioValues aller Shareholders neu, die diesen Share besitzen
+        /// Recalculates portfolio values of all shareholders who own this share
         /// </summary>
         private async Task RecalculateAffectedPortfoliosAsync(int shareId)
         {
-            // Finde alle Shareholders, die diesen Share besitzen
+            // Find all shareholders who own this share
             var affectedShareholders = await _context.Shareholders
                 .Include(s => s.Portfolios)
                     .ThenInclude(p => p.Share)
@@ -95,7 +95,7 @@ namespace ShareSphere.Api.Services
 
             foreach (var shareholder in affectedShareholders)
             {
-                // Berechne neuen Portfolio-Wert
+                // Calculate new portfolio value
                 decimal newValue = shareholder.Portfolios
                     .Where(p => p.Share != null)
                     .Sum(p => p. amount * p.Share!.Price);

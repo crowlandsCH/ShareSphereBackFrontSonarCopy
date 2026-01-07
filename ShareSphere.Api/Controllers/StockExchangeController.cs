@@ -27,7 +27,7 @@ namespace ShareSphere.Api.Controllers
         );
 
         /// <summary>
-        /// Gibt alle Stock Exchanges zurück
+        /// Returns all stock exchanges
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -37,7 +37,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Gibt eine spezifische Stock Exchange nach ID zurück
+        /// Returns a specific stock exchange by ID
         /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -50,7 +50,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Erstellt eine neue Stock Exchange (für Admins und Users)
+        /// Creates a new stock exchange (for admins and users)
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPost]
@@ -68,7 +68,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Aktualisiert eine bestehende Stock Exchange (für Admins und Users)
+        /// Updates an existing stock exchange (for admins and users)
         /// </summary>
         [Authorize(Roles = "admin,user")]
         [HttpPut("{id}")]
@@ -89,7 +89,7 @@ namespace ShareSphere.Api.Controllers
         }
 
         /// <summary>
-        /// Löscht eine Stock Exchange (nur für Admins)
+        /// Deletes a stock exchange (admins only)
         /// </summary>
         [Authorize(Roles = "admin")]
         [HttpDelete("{id}")]

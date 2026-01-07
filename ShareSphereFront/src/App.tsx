@@ -49,9 +49,11 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ?  <Navigate to="/" replace /> : <>{children}</>;
 }
 
+// ⭐ NEW: Separate component that uses useAuth()
 function AppContent() {
   const { user, isAuthenticated, logout } = useAuth();
   
+  // Determine the role
   const userRole = isAuthenticated 
     ? (user?.roles?.includes('admin') ? 'admin' : 'user')
     : null;
@@ -127,6 +129,7 @@ function AppContent() {
   );
 }
 
+// ⭐ IMPORTANT: useAuth() is called INSIDE AuthProvider
 export default function App() {
   return (
     <AuthProvider>

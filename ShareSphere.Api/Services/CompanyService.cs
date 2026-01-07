@@ -38,7 +38,7 @@ namespace ShareSphere.Api.Services
             _context. Companies.Add(company);
             await _context.SaveChangesAsync();
 
-                // Lade die StockExchange Navigation Property nach dem Speichern
+                // Load the StockExchange navigation property after saving
         await _context.Entry(company)
         .Reference(c => c.StockExchange)
         .LoadAsync();
