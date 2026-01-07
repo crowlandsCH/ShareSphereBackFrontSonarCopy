@@ -10,9 +10,43 @@ import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { Toaster } from 'sonner';
 
+// ⭐ AKTUALISIERT: Berücksichtigt isLoading
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  // Warte, bis der Auth-Check abgeschlossen ist
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Lädt...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return isAuthenticated ?  <>{children}</> : <Navigate to="/login" replace />;
+}
+
+// ⭐ NEU: Redirect zu Dashboard wenn bereits eingeloggt
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  // Warte, bis der Auth-Check abgeschlossen ist
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Lädt...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Wenn bereits eingeloggt, leite zum Dashboard weiter
+  return isAuthenticated ?  <Navigate to="/" replace /> : <>{children}</>;
 }
 
 // ⭐ NEW: Separate component that uses useAuth()
@@ -24,7 +58,7 @@ function AppContent() {
     ? (user?.roles?.includes('admin') ? 'admin' : 'user')
     : null;
 
-  console.log('🔐 Debug:', { isAuthenticated, user, userRole });  // ← Debug-Log
+  console.log('🔐 Debug:', { isAuthenticated, user, userRole });
 
   const handleLogout = () => {
     logout();
@@ -36,9 +70,23 @@ function AppContent() {
       
       <main className="container mx-auto px-4 py-6 max-w-7xl">
         <Routes>
-          {/* Öffentliche Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          {/* ⭐ AKTUALISIERT: Öffentliche Routes mit Redirect */}
+          <Route 
+            path="/login" 
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            } 
+          />
+          <Route 
+            path="/register" 
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            } 
+          />
           
           {/* Geschützte Routes */}
           <Route 

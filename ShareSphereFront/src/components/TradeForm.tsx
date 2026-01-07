@@ -2,35 +2,39 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeftRight, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiFetch } from '../api/client';
+import { useAuth } from './AuthContext';
 
-// Mock API data
-// API Endpoint: GET /api/brokers
-const mockBrokers = [
-  { id: 1, name: 'E*TRADE', description: 'Leading online broker' },
-  { id: 2, name: 'TD Ameritrade', description: 'Full-service brokerage' },
-  { id: 3, name: 'Robinhood', description: 'Commission-free trading' },
-  { id: 4, name: 'Charles Schwab', description: 'Comprehensive investment services' },
-];
+// ⭐ Interfaces für TypeScript
+interface AvailableShare {
+  shareId: number;
+  company: {
+    name: string;
+    tickerSymbol: string;
+  };
+  price: number;
+  availableQuantity: number;
+}
 
-// API Endpoint: GET /api/shares (all available shares)
-const mockAllShares = [
-  { id: 1001, companyName: 'Apple Inc.', ticker: 'AAPL', shareType: 'Common Stock', availableQuantity: 1500, pricePerShare: 175.50 },
-  { id: 1002, companyName: 'Apple Inc.', ticker: 'AAPL', shareType: 'Preferred Stock', availableQuantity: 500, pricePerShare: 185.75 },
-  { id: 1003, companyName: 'Microsoft Corporation', ticker: 'MSFT', shareType: 'Common Stock', availableQuantity: 2000, pricePerShare: 380.25 },
-  { id: 1004, companyName: 'Coca-Cola Company', ticker: 'KO', shareType: 'Common Stock', availableQuantity: 3500, pricePerShare: 62.40 },
-  { id: 1005, companyName: 'Amazon.com Inc.', ticker: 'AMZN', shareType: 'Common Stock', availableQuantity: 1200, pricePerShare: 145.30 },
-  { id: 1006, companyName: 'Tesla Inc.', ticker: 'TSLA', shareType: 'Common Stock', availableQuantity: 800, pricePerShare: 242.85 },
-];
+interface OwnedShare {
+  shareId: number;
+  companyName: string;
+  tickerSymbol: string;
+  quantity:  number;
+  currentPricePerShare: number;
+}
 
 export function TradeForm() {
   const location = useLocation();
   const navigate = useNavigate();
-  const preselectedData = location.state as { share?: any; company?: any } | null;
+  const { user } = useAuth();
+  const preselectedData = location.state as { share?:  any; company?: any } | null;
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [brokers, setBrokers] = useState<any[]>([]);
-  const [shares, setShares] = useState<any[]>([]);
+  const [availableShares, setAvailableShares] = useState<AvailableShare[]>([]); // ⭐ Zum Kaufen
+  const [ownedShares, setOwnedShares] = useState<OwnedShare[]>([]);             // ⭐ Zum Verkaufen
   
   const [formData, setFormData] = useState({
     brokerId: '',
@@ -42,33 +46,71 @@ export function TradeForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Simulated API call: GET /api/brokers and /api/shares
+  // ⭐ Fetch Brokers (einmalig)
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      setBrokers(mockBrokers);
-      setShares(mockAllShares);
-      
-      // Pre-fill if coming from share list
-      if (preselectedData?.share) {
-        setFormData(prev => ({
-          ...prev,
-          shareId: preselectedData.share.ShareId.toString(),
-        }));
+    const fetchBrokers = async () => {
+      try {
+        const data = await apiFetch<any[]>('/api/brokers');
+        setBrokers(data);
+      } catch (err) {
+        console.error('Failed to fetch brokers:', err);
+        toast.error('Failed to load brokers');
       }
-      
-      setLoading(false);
     };
 
-    fetchData();
-  }, [preselectedData]);
+    fetchBrokers();
+  }, []);
 
-  const selectedShare = shares.find(s => s.id === parseInt(formData.shareId));
+  // ⭐ Fetch Shares basierend auf Trade Type
+  useEffect(() => {
+    const fetchShares = async () => {
+      if (!user?.shareholderId) return;
+
+      setLoading(true);
+      
+      try {
+        if (formData.tradeType === 'Buy') {
+          // Alle verfügbaren Shares vom Market laden
+          const data = await apiFetch<AvailableShare[]>('/api/shares');
+          setAvailableShares(data);
+          setOwnedShares([]); // Reset owned shares
+        } else {
+          // Portfolio des Users laden (nur die Shares die er besitzt)
+          const portfolioData = await apiFetch<any>(
+            `/api/shareholders/${user.shareholderId}/portfolio`
+          );
+          setOwnedShares(portfolioData. ownedShares);
+          setAvailableShares([]); // Reset available shares
+        }
+
+        // Pre-fill wenn von Share-Liste kommend
+        if (preselectedData?.share) {
+          setFormData(prev => ({
+            ...prev,
+            shareId: preselectedData.share.shareId?. toString() || 
+                     preselectedData.share.ShareId?.toString() || '',
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch shares:', error);
+        toast.error('Failed to load shares');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchShares();
+  }, [formData.tradeType, user?.shareholderId]);
+
+  // ⭐ Dynamisch die richtige Share-Liste und Selected Share verwenden
+  const shares = formData.tradeType === 'Buy' ?  availableShares : ownedShares;
+  
+  const selectedShare = shares.find(s => 
+    s.shareId === parseInt(formData.shareId)
+  );
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors:  Record<string, string> = {};
 
     if (!formData.brokerId) {
       newErrors.brokerId = 'Please select a broker';
@@ -84,10 +126,21 @@ export function TradeForm() {
       const qty = parseInt(formData.quantity);
       if (isNaN(qty) || qty <= 0) {
         newErrors.quantity = 'Quantity must be a positive number';
-      } else if (!Number.isInteger(qty)) {
+      } else if (! Number.isInteger(qty)) {
         newErrors.quantity = 'Quantity must be a whole number';
-      } else if (selectedShare && qty > selectedShare.availableQuantity) {
-        newErrors.quantity = `Only ${selectedShare.availableQuantity} shares available`;
+      } else if (selectedShare) {
+        // ⭐ Validierung je nach Trade Type
+        if (formData.tradeType === 'Buy') {
+          const available = (selectedShare as AvailableShare).availableQuantity;
+          if (qty > available) {
+            newErrors.quantity = `Only ${available} shares available`;
+          }
+        } else {
+          const owned = (selectedShare as OwnedShare).quantity;
+          if (qty > owned) {
+            newErrors. quantity = `You only own ${owned} shares`;
+          }
+        }
       }
     }
 
@@ -99,54 +152,80 @@ export function TradeForm() {
     if (!selectedShare || !formData.quantity) return 0;
     const qty = parseInt(formData.quantity);
     if (isNaN(qty)) return 0;
-    return qty * selectedShare.pricePerShare;
+    
+    // ⭐ Preis je nach Trade Type
+    const price = formData.tradeType === 'Buy' 
+      ? (selectedShare as AvailableShare).price
+      : (selectedShare as OwnedShare).currentPricePerShare;
+    
+    return qty * price;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React. FormEvent) => {
+  e.preventDefault();
 
-    if (!validateForm()) {
-      toast.error('Please fix the errors in the form');
-      return;
+  if (!validateForm()) {
+    toast.error('Please fix the errors in the form');
+    return;
+  }
+
+  if (! user?. shareholderId) {
+    toast.error('User information not available');
+    return;
+  }
+
+  setSubmitting(true);
+
+  try {
+    // ⭐ UNTERSCHIEDLICHE API CALLS JE NACH TRADE TYPE
+    if (formData.tradeType === 'Buy') {
+      // ✅ KAUF:  POST /api/shareholders/{shareholderId}/purchase
+      const purchaseData = {
+        shareId: parseInt(formData.shareId),
+        quantity: parseInt(formData.quantity),
+        brokerId: parseInt(formData. brokerId),
+      };
+
+      await apiFetch(`/api/shareholders/${user.shareholderId}/purchase`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(purchaseData),
+      });
+
+    } else {
+      // ✅ VERKAUF: POST /api/shareholders/{shareholderId}/sell-shares
+      const sellData = {
+        shareId:  parseInt(formData.shareId),
+        quantity: parseInt(formData.quantity),
+        brokerId: parseInt(formData.brokerId),
+      };
+
+      await apiFetch(`/api/shareholders/${user.shareholderId}/sell-shares`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sellData),
+      });
     }
-
-    setSubmitting(true);
-
-    // Simulated API call: POST /api/trades
-    const tradeData = {
-      brokerId: parseInt(formData.brokerId),
-      shareId: parseInt(formData.shareId),
-      quantity: parseInt(formData.quantity),
-      tradeType: formData.tradeType,
-      pricePerShare: selectedShare!.pricePerShare,
-      totalAmount: calculateTotal(),
-    };
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate success response
-      setShowConfirmation(true);
-      toast.success(`${formData.tradeType} order executed successfully!`);
-      
-      // Reset form after delay
-      setTimeout(() => {
-        setShowConfirmation(false);
-        setFormData({
-          brokerId: '',
-          shareId: '',
-          quantity: '',
-          tradeType: 'Buy',
-        });
-        setErrors({});
-      }, 3000);
-      
-    } catch (error) {
-      toast.error('Failed to execute trade. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    
+    // ✅ SUCCESS
+    setShowConfirmation(true);
+    toast.success(`${formData.tradeType} order executed successfully!`);
+    
+    setTimeout(() => {
+      navigate('/portfolio');
+    }, 2000);
+    
+  } catch (error:  any) {
+    console.error('Trade execution failed:', error);
+    toast.error(error?. message || 'Failed to execute trade. Please try again.');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -177,10 +256,10 @@ export function TradeForm() {
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
           <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
           <div>
-            <h3 className="text-green-900">Trade Executed Successfully</h3>
+            <h3 className="text-green-900 font-medium">Trade Executed Successfully</h3>
             <p className="text-sm text-green-700 mt-1">
-              Your {formData.tradeType.toLowerCase()} order for {formData.quantity} shares has been processed.
-              Your portfolio has been updated.
+              Your {formData.tradeType. toLowerCase()} order for {formData.quantity} shares has been processed.
+              Redirecting to portfolio...
             </p>
           </div>
         </div>
@@ -189,14 +268,17 @@ export function TradeForm() {
       <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
         {/* Trade Type Toggle */}
         <div>
-          <label className="block text-sm text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Trade Type <span className="text-red-500">*</span>
           </label>
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setFormData(prev => ({ ...prev, tradeType: 'Buy' }))}
-              className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+              onClick={() => {
+                setFormData(prev => ({ ...prev, tradeType: 'Buy', shareId: '', quantity: '' }));
+                setErrors({});
+              }}
+              className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
                 formData.tradeType === 'Buy'
                   ? 'bg-green-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -206,8 +288,11 @@ export function TradeForm() {
             </button>
             <button
               type="button"
-              onClick={() => setFormData(prev => ({ ...prev, tradeType: 'Sell' }))}
-              className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+              onClick={() => {
+                setFormData(prev => ({ ...prev, tradeType: 'Sell', shareId: '', quantity: '' }));
+                setErrors({});
+              }}
+              className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
                 formData.tradeType === 'Sell'
                   ? 'bg-red-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -220,7 +305,7 @@ export function TradeForm() {
 
         {/* Broker Selection */}
         <div>
-          <label htmlFor="broker" className="block text-sm text-gray-700 mb-2">
+          <label htmlFor="broker" className="block text-sm font-medium text-gray-700 mb-2">
             Select Broker <span className="text-red-500">*</span>
           </label>
           <select
@@ -233,18 +318,16 @@ export function TradeForm() {
             className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors.brokerId ? 'border-red-500' : 'border-gray-300'
             }`}
-            aria-invalid={!!errors.brokerId}
-            aria-describedby={errors.brokerId ? 'broker-error' : undefined}
           >
-            <option value="">Choose a broker...</option>
-            {brokers.map(broker => (
-              <option key={broker.id} value={broker.id}>
-                {broker.name} - {broker.description}
+            <option value="">Choose a broker... </option>
+            {brokers. map(broker => (
+              <option key={broker.brokerId} value={broker.brokerId}>
+                {broker.name} - {broker.licenseNumber}
               </option>
             ))}
           </select>
           {errors.brokerId && (
-            <p id="broker-error" className="mt-1 text-sm text-red-600 flex items-center gap-1">
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
               <AlertCircle className="w-4 h-4" />
               {errors.brokerId}
             </p>
@@ -253,33 +336,49 @@ export function TradeForm() {
 
         {/* Share Selection */}
         <div>
-          <label htmlFor="share" className="block text-sm text-gray-700 mb-2">
+          <label htmlFor="share" className="block text-sm font-medium text-gray-700 mb-2">
             Select Share <span className="text-red-500">*</span>
           </label>
           <select
             id="share"
-            value={formData.shareId}
+            value={formData. shareId}
             onChange={(e) => {
               setFormData(prev => ({ ...prev, shareId: e.target.value }));
               setErrors(prev => ({ ...prev, shareId: '' }));
             }}
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus: ring-2 focus:ring-blue-500 ${
               errors.shareId ? 'border-red-500' : 'border-gray-300'
             }`}
-            aria-invalid={!!errors.shareId}
-            aria-describedby={errors.shareId ? 'share-error' : undefined}
+            disabled={shares.length === 0}
           >
             <option value="">Choose a share...</option>
-            {shares.map(share => (
-              <option key={share.id} value={share.id}>
-                {share.companyName} ({share.ticker}) - {share.shareType} - {formatCurrency(share.pricePerShare)}
-              </option>
-            ))}
+            {formData.tradeType === 'Buy' 
+              ? availableShares.map(share => (
+                  <option key={share.shareId} value={share.shareId}>
+                    {share.company.name} ({share.company.tickerSymbol}) - {formatCurrency(share.price)} - ({share.availableQuantity} Available)
+                  </option>
+                ))
+              : ownedShares.map(share => (
+                  <option key={share.shareId} value={share. shareId}>
+                    {share.companyName} ({share. tickerSymbol}) - {formatCurrency(share.currentPricePerShare)} - ({share.quantity} Owned)
+                  </option>
+                ))
+            }
           </select>
           {errors.shareId && (
-            <p id="share-error" className="mt-1 text-sm text-red-600 flex items-center gap-1">
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
               <AlertCircle className="w-4 h-4" />
               {errors.shareId}
+            </p>
+          )}
+          
+          {/* ⭐ Info wenn keine Shares verfügbar */}
+          {shares.length === 0 && (
+            <p className="mt-2 text-sm text-amber-600 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {formData.tradeType === 'Buy' 
+                ? 'No shares available for purchase at the moment.'
+                : 'You don\'t own any shares to sell.  Start buying to build your portfolio!'}
             </p>
           )}
         </div>
@@ -287,15 +386,28 @@ export function TradeForm() {
         {/* Share Details */}
         {selectedShare && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-            <h3 className="text-sm text-blue-900">Share Details</h3>
+            <h3 className="text-sm font-medium text-blue-900">Share Details</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-blue-700">Price per Share:</span>
-                <div className="text-blue-900">{formatCurrency(selectedShare.pricePerShare)}</div>
+                <div className="text-blue-900 font-semibold">
+                  {formatCurrency(
+                    formData.tradeType === 'Buy' 
+                      ? (selectedShare as AvailableShare).price
+                      : (selectedShare as OwnedShare).currentPricePerShare
+                  )}
+                </div>
               </div>
               <div>
-                <span className="text-blue-700">Available Quantity:</span>
-                <div className="text-blue-900">{selectedShare.availableQuantity.toLocaleString()} shares</div>
+                <span className="text-blue-700">
+                  {formData.tradeType === 'Buy' ?  'Available: ' : 'You Own:'}
+                </span>
+                <div className="text-blue-900 font-semibold">
+                  {formData. tradeType === 'Buy' 
+                    ? (selectedShare as AvailableShare).availableQuantity.toLocaleString()
+                    : (selectedShare as OwnedShare).quantity.toLocaleString()
+                  } shares
+                </div>
               </div>
             </div>
           </div>
@@ -303,7 +415,7 @@ export function TradeForm() {
 
         {/* Quantity Input */}
         <div>
-          <label htmlFor="quantity" className="block text-sm text-gray-700 mb-2">
+          <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
             Quantity <span className="text-red-500">*</span>
           </label>
           <input
@@ -320,11 +432,10 @@ export function TradeForm() {
             className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors.quantity ? 'border-red-500' : 'border-gray-300'
             }`}
-            aria-invalid={!!errors.quantity}
-            aria-describedby={errors.quantity ? 'quantity-error' : undefined}
+            disabled={! selectedShare}
           />
           {errors.quantity && (
-            <p id="quantity-error" className="mt-1 text-sm text-red-600 flex items-center gap-1">
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
               <AlertCircle className="w-4 h-4" />
               {errors.quantity}
             </p>
@@ -332,11 +443,11 @@ export function TradeForm() {
         </div>
 
         {/* Total Amount */}
-        {selectedShare && formData.quantity && !errors.quantity && (
+        {selectedShare && formData.quantity && ! errors.quantity && (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
-              <span className="text-gray-700">Total Amount:</span>
-              <span className="text-gray-900">{formatCurrency(calculateTotal())}</span>
+              <span className="text-gray-700 font-medium">Total Amount:</span>
+              <span className="text-2xl font-bold text-gray-900">{formatCurrency(calculateTotal())}</span>
             </div>
           </div>
         )}
@@ -345,8 +456,8 @@ export function TradeForm() {
         <div className="flex gap-4">
           <button
             type="submit"
-            disabled={submitting}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+            disabled={submitting || shares.length === 0}
+            className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
               formData.tradeType === 'Buy'
                 ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500'
                 : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
@@ -367,7 +478,7 @@ export function TradeForm() {
           <button
             type="button"
             onClick={() => navigate('/portfolio')}
-            className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             View Portfolio
           </button>
@@ -376,10 +487,14 @@ export function TradeForm() {
 
       {/* Information Notice */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <h3 className="text-sm text-yellow-900 mb-1">Important Information</h3>
+        <h3 className="text-sm font-medium text-yellow-900 mb-2">Important Information</h3>
         <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
           <li>All trades are executed at current market prices</li>
-          <li>Ensure you have sufficient funds in your brokerage account</li>
+          <li>
+            {formData.tradeType === 'Buy' 
+              ? 'Ensure you have sufficient funds in your brokerage account'
+              : 'You can only sell shares you currently own'}
+          </li>
           <li>Completed trades will appear in your portfolio immediately</li>
           <li>Trade confirmations will be sent to your registered email</li>
         </ul>

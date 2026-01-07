@@ -12,8 +12,8 @@ using ShareSphere.Api.Data;
 namespace ShareSphere.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260102100528_AddShareholderIdToApplicationUser")]
-    partial class AddShareholderIdToApplicationUser
+    [Migration("20260105134615_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
