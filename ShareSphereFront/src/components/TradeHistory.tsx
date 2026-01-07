@@ -1,6 +1,6 @@
 // File: TradeHistory.tsx
 import React, { useState } from 'react';
-import { Calendar, Filter, ChevronLeft, ChevronRight, ArrowDownUp, ArrowUpDown } from 'lucide-react';
+import { Calendar, Filter, ChevronLeft, ChevronRight, ArrowDownUp, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { EmptyState } from './EmptyState';
 
 enum TradeType {
@@ -30,6 +30,28 @@ export function TradeHistory({ trades }: TradeHistoryProps) {
   const [dateRange, setDateRange] = useState<'All' | 'Today' | 'Week' | 'Month'>('All');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  // Sorting state
+  type TradeSortField = 'type' | 'companyName' | 'quantity' | 'unitPrice' | 'totalAmount' | 'brokerName' | 'timestamp';
+  type SortDirection = 'asc' | 'desc' | null;
+  const [sortField, setSortField] = useState<TradeSortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  const handleSort = (field: TradeSortField) => {
+    if (sortField === field) {
+      if (sortDirection === 'asc') setSortDirection('desc');
+      else if (sortDirection === 'desc') { setSortDirection(null); setSortField(null); }
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const renderSortIcon = (field: TradeSortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-gray-400" />;
+    if (sortDirection === 'asc') return <ArrowUp className="w-3 h-3 text-blue-600" />;
+    if (sortDirection === 'desc') return <ArrowDown className="w-3 h-3 text-blue-600" />;
+    return <ArrowUpDown className="w-3 h-3 text-gray-400" />;
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -80,9 +102,44 @@ export function TradeHistory({ trades }: TradeHistoryProps) {
     })
     .filter(filterByDateRange);
 
-  const totalPages = Math.ceil(filteredTrades.length / itemsPerPage);
+  const getSortedTrades = (arr: typeof filteredTrades) => {
+    if (!sortField || !sortDirection) return arr;
+    return [...arr].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      if (sortField === 'totalAmount') {
+        aValue = a.quantity * a.unitPrice;
+        bValue = b.quantity * b.unitPrice;
+      } else {
+        aValue = (a as any)[sortField];
+        bValue = (b as any)[sortField];
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        const cmp = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+        return sortDirection === 'asc' ? cmp : -cmp;
+      }
+
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      // For dates
+      if (sortField === 'timestamp') {
+        const da = new Date(a.timestamp).getTime();
+        const db = new Date(b.timestamp).getTime();
+        return sortDirection === 'asc' ? da - db : db - da;
+      }
+
+      return 0;
+    });
+  };
+
+  const sortedFilteredTrades = getSortedTrades(filteredTrades);
+  const totalPages = Math.ceil(sortedFilteredTrades.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTrades = filteredTrades.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedTrades = sortedFilteredTrades.slice(startIndex, startIndex + itemsPerPage);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
@@ -172,13 +229,48 @@ export function TradeHistory({ trades }: TradeHistoryProps) {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Price per Share</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Broker</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none"
+                      onClick={() => handleSort('type')}
+                    >
+                      <div className="flex items-center gap-2">Type {renderSortIcon('type')}</div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none"
+                      onClick={() => handleSort('companyName')}
+                    >
+                      <div className="flex items-center gap-2">Company {renderSortIcon('companyName')}</div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer select-none"
+                      onClick={() => handleSort('quantity')}
+                    >
+                      <div className="flex items-center justify-end gap-2">Quantity {renderSortIcon('quantity')}</div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer select-none"
+                      onClick={() => handleSort('unitPrice')}
+                    >
+                      <div className="flex items-center justify-end gap-2">Price per Share {renderSortIcon('unitPrice')}</div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer select-none"
+                      onClick={() => handleSort('totalAmount')}
+                    >
+                      <div className="flex items-center justify-end gap-2">Total Amount {renderSortIcon('totalAmount')}</div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none"
+                      onClick={() => handleSort('brokerName')}
+                    >
+                      <div className="flex items-center gap-2">Broker {renderSortIcon('brokerName')}</div>
+                    </th>
+                    <th
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none"
+                      onClick={() => handleSort('timestamp')}
+                    >
+                      <div className="flex items-center gap-2">Date {renderSortIcon('timestamp')}</div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
