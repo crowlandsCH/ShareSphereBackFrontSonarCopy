@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface HoldingsTableProps {
   holdings: Array<{
@@ -15,12 +15,28 @@ interface HoldingsTableProps {
   }>;
 }
 
-export function HoldingsTable({ holdings }: HoldingsTableProps) {
+type SortField = 'companyName' | 'quantity' | 'currentPricePerShare' | 'totalValue';
+type SortDirection = 'asc' | 'desc' | null;
+
+interface HoldingsTablePropsExtended extends HoldingsTableProps {
+  sortField?: SortField | null;
+  sortDirection?: SortDirection;
+  onSort?: (field: SortField) => void;
+}
+
+export function HoldingsTable({ holdings, sortField = null, sortDirection = null, onSort }: HoldingsTablePropsExtended) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(value);
+  };
+
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-gray-400" />;
+    if (sortDirection === 'asc') return <ArrowUp className="w-3 h-3 text-blue-600" />;
+    if (sortDirection === 'desc') return <ArrowDown className="w-3 h-3 text-blue-600" />;
+    return <ArrowUpDown className="w-3 h-3 text-gray-400" />;
   };
 
   const calculateGainLoss = (purchasePrice: number, currentPrice: number, quantity: number) => {
@@ -39,9 +55,33 @@ export function HoldingsTable({ holdings }: HoldingsTableProps) {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-3 text-left text-gray-700">Company</th>
-              <th className="px-6 py-3 text-left text-gray-700">Quantity</th>
-              <th className="px-6 py-3 text-left text-gray-700">Current Price</th>
-              <th className="px-6 py-3 text-left text-gray-700">Total Value</th>
+              <th
+                className="px-6 py-3 text-left text-gray-700 cursor-pointer select-none"
+                onClick={() => onSort && onSort('quantity')}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Quantity</span>
+                  {renderSortIcon('quantity')}
+                </div>
+              </th>
+              <th
+                className="px-6 py-3 text-left text-gray-700 cursor-pointer select-none"
+                onClick={() => onSort && onSort('currentPricePerShare')}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Current Price</span>
+                  {renderSortIcon('currentPricePerShare')}
+                </div>
+              </th>
+              <th
+                className="px-6 py-3 text-left text-gray-700 cursor-pointer select-none"
+                onClick={() => onSort && onSort('totalValue')}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Total Value</span>
+                  {renderSortIcon('totalValue')}
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">

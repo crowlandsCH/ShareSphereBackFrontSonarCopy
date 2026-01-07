@@ -37,6 +37,11 @@ export function Portfolio() {
   const [holdings, setHoldings] = useState<any[]>([]);
   const [trades, setTrades] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
+  // Sorting for holdings table
+  type HoldingsSortField = 'companyName' | 'quantity' | 'currentPricePerShare' | 'totalValue';
+  type SortDirection = 'asc' | 'desc' | null;
+  const [holdingsSortField, setHoldingsSortField] = useState<HoldingsSortField | null>(null);
+  const [holdingsSortDirection, setHoldingsSortDirection] = useState<SortDirection>(null);
 
   // Simulated API calls
     useEffect(() => {
@@ -108,6 +113,35 @@ export function Portfolio() {
     }).format(value);
   };
 
+  const handleHoldingsSort = (field: HoldingsSortField) => {
+    if (holdingsSortField === field) {
+      if (holdingsSortDirection === 'asc') setHoldingsSortDirection('desc');
+      else if (holdingsSortDirection === 'desc') { setHoldingsSortDirection(null); setHoldingsSortField(null); }
+    } else {
+      setHoldingsSortField(field);
+      setHoldingsSortDirection('asc');
+    }
+  };
+
+  const getSortedHoldings = () => {
+    if (!holdingsSortField || !holdingsSortDirection) return holdings;
+    return [...holdings].sort((a, b) => {
+      const aValue = a[holdingsSortField];
+      const bValue = b[holdingsSortField];
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        const cmp = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+        return holdingsSortDirection === 'asc' ? cmp : -cmp;
+      }
+
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return holdingsSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      return 0;
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -147,7 +181,7 @@ export function Portfolio() {
               <span className="text-sm text-gray-600">Total Shares Owned</span>
               <TrendingUp className="w-5 h-5 text-blue-600" />
             </div>
-            <div className="text-gray-900">{summary.totalPortfolioValue}</div>
+            <div className="text-gray-900">{summary.totalSharesCount}</div>
             <div className="text-sm text-gray-500">Across {holdings.length} holdings</div>
           </div>
 
@@ -166,7 +200,12 @@ export function Portfolio() {
       <div>
         <h2 className="text-gray-900 mb-4">Holdings</h2>
         {hasHoldings ? (
-          <HoldingsTable holdings={holdings} />
+          <HoldingsTable
+            holdings={getSortedHoldings()}
+            sortField={holdingsSortField}
+            sortDirection={holdingsSortDirection}
+            onSort={handleHoldingsSort}
+          />
         ) : (
           <EmptyState
             icon={TrendingUp}

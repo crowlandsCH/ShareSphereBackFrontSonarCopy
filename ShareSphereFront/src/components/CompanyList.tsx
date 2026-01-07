@@ -7,7 +7,6 @@ interface CompanyListProps {
     name: string;
     tickerSymbol: string;
     sector: string;
-    description: string;
   }>;
   onSelect: (company: any) => void;
 }
@@ -22,7 +21,6 @@ export function CompanyList({ companies, onSelect }: CompanyListProps) {
               <th className="px-6 py-3 text-left text-gray-700">Company</th>
               <th className="px-6 py-3 text-left text-gray-700">Ticker</th>
               <th className="px-6 py-3 text-left text-gray-700">Sector</th>
-              <th className="px-6 py-3 text-left text-gray-700">Description</th>
               <th className="px-6 py-3"></th>
             </tr>
           </thead>
@@ -56,9 +54,6 @@ export function CompanyList({ companies, onSelect }: CompanyListProps) {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-gray-600">{company.sector}</td>
-                <td className="px-6 py-4 text-gray-600">
-                  <span className="line-clamp-1">{company.description}</span>
-                </td>
                 <td className="px-6 py-4">
                   <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                 </td>
