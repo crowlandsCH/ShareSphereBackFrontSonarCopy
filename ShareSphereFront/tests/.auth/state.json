@@ -1,0 +1,18 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "auth_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3ZmRmOWJiMy04ZThjLTQyY2UtYjQxNC02ZGQ2ZGFkOTI1NjgiLCJ1bmlxdWVfbmFtZSI6ImpzbWl0aCIsImRpc3BsYXlOYW1lIjoiSm9obiBTbWl0aCIsInNoYXJlaG9sZGVySWQiOiIxIiwicm9sZSI6InVzZXIiLCJleHAiOjE3Njc4OTQ4ODIsImlzcyI6IlNoYXJlU3BoZXJlIiwiYXVkIjoiU2hhcmVTcGhlcmVDbGllbnQifQ.cD34JKefW9KpFFt0sAAAFRvHM7RXNGyOvjvQb0OYFHs"
+        },
+        {
+          "name": "user",
+          "value": "{\"id\":\"7fdf9bb3-8e8c-42ce-b414-6dd6dad92568\",\"username\":\"jsmith\",\"displayName\":\"John Smith\",\"shareholderId\":1,\"roles\":[\"user\"],\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3ZmRmOWJiMy04ZThjLTQyY2UtYjQxNC02ZGQ2ZGFkOTI1NjgiLCJ1bmlxdWVfbmFtZSI6ImpzbWl0aCIsImRpc3BsYXlOYW1lIjoiSm9obiBTbWl0aCIsInNoYXJlaG9sZGVySWQiOiIxIiwicm9sZSI6InVzZXIiLCJleHAiOjE3Njc4OTQ4ODIsImlzcyI6IlNoYXJlU3BoZXJlIiwiYXVkIjoiU2hhcmVTcGhlcmVDbGllbnQifQ.cD34JKefW9KpFFt0sAAAFRvHM7RXNGyOvjvQb0OYFHs\",\"isAdmin\":false,\"isUser\":true}"
+        }
+      ]
+    }
+  ]
+}
