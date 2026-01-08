@@ -637,10 +637,9 @@ export function CompanyManagement() {
 
               <div>
                 <label htmlFor="sharePrice" className="block text-sm text-gray-700 mb-1">
-                  Share Price <span className="text-red-500">*</span>
+                  Share Price $ <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-gray-500">$</span>
                   <input
                     type="number"
                     id="sharePrice"
