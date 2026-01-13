@@ -27,83 +27,83 @@ export function Dashboard() {
 
 
   // Simulated API call: GET /api/exchanges
-useEffect(() => {
-  const fetchExchanges = async () => {
-    try {
-      setLoading(true);
-      const data = await apiFetch<any[]>('/api/stockexchanges');
-      setExchanges(data);
-    } catch (err) {
-      console.error(err);
-      setExchanges([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchExchanges = async () => {
+      try {
+        setLoading(true);
+        const data = await apiFetch<any[]>('/api/stockexchanges');
+        setExchanges(data);
+      } catch (err) {
+        console.error(err);
+        setExchanges([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchExchanges();
-}, []);
+    fetchExchanges();
+  }, []);
 
-useEffect(() => {
-  if (!selectedCompany) return;
+  useEffect(() => {
+    if (!selectedCompany) return;
 
-  const loadShares = async () => {
-    try {
-      const data = await apiFetch<any[]>(
-        `/api/shares/company/${selectedCompany.companyId}`
-      );
-      setShares(data);
-    } catch (e) {
-      console.error(e);
-    }
-  };
+    const loadShares = async () => {
+      try {
+        const data = await apiFetch<any[]>(
+          `/api/shares/company/${selectedCompany.companyId}`
+        );
+        setShares(data);
+      } catch (e) {
+        console.error(e);
+      }
+    };
 
-  loadShares();
-  const interval = setInterval(loadShares, 3000);
+    loadShares();
+    const interval = setInterval(loadShares, 3000);
 
-  return () => clearInterval(interval);
-}, [selectedCompany]);
+    return () => clearInterval(interval);
+  }, [selectedCompany]);
 
   // Simulated API call: GET /api/exchanges/{exchangeId}/companies
-const handleExchangeSelect = async (exchange: any) => {
-  try {
-    setSelectedExchange(exchange);
-    setSelectedCompany(null);
-    setCompanies([]);
-    setShares([]);
-    setLoadingCompanies(true);
+  const handleExchangeSelect = async (exchange: any) => {
+    try {
+      setSelectedExchange(exchange);
+      setSelectedCompany(null);
+      setCompanies([]);
+      setShares([]);
+      setLoadingCompanies(true);
 
-    const exchangeData = await apiFetch<any>(
-      `/api/stockexchanges/${exchange.exchangeId}`
-    );
+      const exchangeData = await apiFetch<any>(
+        `/api/stockexchanges/${exchange.exchangeId}`
+      );
 
-    setCompanies(exchangeData.companies);
-  } catch (error) {
-    console.error(error);
-    setCompanies([]);
-  } finally {
-    setLoadingCompanies(false);
-  }
-};
+      setCompanies(exchangeData.companies);
+    } catch (error) {
+      console.error(error);
+      setCompanies([]);
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
 
-const handleCompanySelect = async (company: any) => {
-  try {
-    setSelectedCompany(company);
-    setShares([]);
-    setLoadingShares(true);
+  const handleCompanySelect = async (company: any) => {
+    try {
+      setSelectedCompany(company);
+      setShares([]);
+      setLoadingShares(true);
 
-    const shares = await apiFetch<any[]>(
-      `/api/shares/company/${company.companyId}`
-    );
+      const shares = await apiFetch<any[]>(
+        `/api/shares/company/${company.companyId}`
+      );
 
-    setShares(shares);
-  } catch (error) {
-    console.error(error);
-    setShares([]);
-  } finally {
-    setLoadingShares(false);
-  }
-};
+      setShares(shares);
+    } catch (error) {
+      console.error(error);
+      setShares([]);
+    } finally {
+      setLoadingShares(false);
+    }
+  };
 
   const handleBackToExchanges = () => {
     setSelectedExchange(null);
@@ -221,7 +221,7 @@ const handleCompanySelect = async (company: any) => {
         <div>
           <div className="mb-6">
             <h1 className="text-gray-900 mb-2">
-              {selectedCompany.name} ({selectedCompany.ticker})
+              {selectedCompany.name} ({selectedCompany.tickerSymbol})
             </h1>
             <p className="text-gray-600">{selectedCompany.description}</p>
             <div className="flex gap-4 mt-2">
