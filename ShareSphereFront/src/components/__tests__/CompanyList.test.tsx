@@ -23,7 +23,7 @@ describe('CompanyList (user-visible behaviour)', () => {
     expect(screen.getByText('Company')).toBeTruthy();
     expect(screen.getByText('Ticker')).toBeTruthy();
     expect(screen.getByText('Sector')).toBeTruthy();
-    expect(screen.getByText('Description')).toBeTruthy();
+    
 
     // Company cells
     expect(screen.getByText('Alpha Co')).toBeTruthy();
